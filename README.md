@@ -2,10 +2,13 @@
 > The large language model (LLM) used by Cursor follows the model selected in the editor.
 > Site configuration is documented in [myst.yml](myst.yml).
 > Reproducibility notes are in [specifications.md](specifications.md).
+> Syllabus ↔ chapter mapping (staff): [instructors.md](instructors.md).
 
 # NITIC: Introduction to Deep Learning（Jupyter Book / MyST）
 
 [Jupyter Book](https://jupyterbook.org/)（[MyST](https://mystmd.org/)）でビルドする Markdown ドキュメントです。
+
+教科書構成の更新はブランチ **`feature/nitic-textbook-plan`** で進め、`main` へマージする前にビルドを確認します。
 
 ## ローカルでプレビューする
 

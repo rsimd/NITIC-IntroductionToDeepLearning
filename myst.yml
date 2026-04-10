@@ -10,7 +10,14 @@ project:
   github: https://github.com/rsimd/NITIC-IntroductionToDeepLearning
   toc:
     - file: index.md
-    - file: lecture01_intro_deep_learning.md
+    - file: 00_overview_machine_learning_and_deep_learning.md
+    - file: 01_introduction_deep_learning.md
+    - file: 02_neural_networks.md
+    - file: 03_convolutional_neural_networks.md
+    - file: 04_object_detection.md
+    - file: 05_robot_vision_inference.md
+    - file: 06_robot_control_node_red.md
+    - file: instructors.md
 
 site:
   template: book-theme
