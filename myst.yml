@@ -1,0 +1,19 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  title: "NITIC: Introduction to Deep Learning"
+  description: 深層学習の導入を扱う MyST / Jupyter Book プロジェクトである。
+  keywords:
+    - deep learning
+    - neural networks
+    - machine learning
+  github: https://github.com/rsimd/NITIC-IntroductionToDeepLearning
+  toc:
+    - file: index.md
+    - file: lecture01_intro_deep_learning.md
+
+site:
+  template: book-theme
+  options:
+    logo_text: DeepLearn
+    logo_url: https://github.com/rsimd/NITIC-IntroductionToDeepLearning

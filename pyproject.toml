@@ -1,0 +1,17 @@
+[project]
+name = "nitic-introduction-to-deep-learning"
+version = "0.1.0"
+description = "Jupyter Book (MyST) materials for NITIC deep learning course"
+readme = "README.md"
+requires-python = ">=3.12.2"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "matplotlib-fontja>=1.1.0",
+    "numpy>=2.4.4",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter-book>=2.1.4",
+    "sphinxcontrib-mermaid>=2.0.1",
+]
