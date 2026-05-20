@@ -13,6 +13,21 @@ project:
     - file: book/01_overview.md
     - file: book/02_mlp.ipynb
     - file: book/03_cnn.ipynb
+    - file: book/demos/index.md
+      children:
+        - file: book/demos/activation-functions.md
+        - file: book/demos/forward-loss.md
+        - file: book/demos/backward.md
+        - file: book/demos/forward-backward-training.md
+        - file: book/demos/data-split.md
+        - file: book/demos/minibatch.md
+        - file: book/demos/neural-networks-preview.md
+        - file: book/demos/cnn-convolution.md
+        - file: book/demos/cnn-color-convolution.md
+        - file: book/demos/cnn-pooling.md
+        - file: book/demos/cnn-color-pooling.md
+        - file: book/demos/cnn-feature-hierarchy.md
+        - file: book/demos/cnn-gallery.md
 
 site:
   template: ./templates/nitic-wide-book-theme/template.yml

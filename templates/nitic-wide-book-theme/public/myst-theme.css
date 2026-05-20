@@ -1,3 +1,69 @@
+html.nitic-embed-page body,
+body:has(.nitic-demo-embed-target) {
+  margin: 0 !important;
+  background: #fff !important;
+}
+
+html.nitic-embed-page .myst-top-nav,
+html.nitic-embed-page .myst-primary-sidebar,
+html.nitic-embed-page .myst-skip-to-article,
+body:has(.nitic-demo-embed-target) .myst-top-nav,
+body:has(.nitic-demo-embed-target) .myst-primary-sidebar,
+body:has(.nitic-demo-embed-target) .myst-skip-to-article {
+  display: none !important;
+}
+
+html.nitic-embed-page main.article-grid,
+body:has(.nitic-demo-embed-target) main.article-grid {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html.nitic-embed-page main.article-grid > :not(article.article),
+body:has(.nitic-demo-embed-target) main.article-grid > :not(article.article) {
+  display: none !important;
+}
+
+html.nitic-embed-page article.article > div:has(> nav),
+body:has(.nitic-demo-embed-target) article.article > div:has(> nav) {
+  display: none !important;
+}
+
+html.nitic-embed-page article.article,
+body:has(.nitic-demo-embed-target) article.article {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html.nitic-embed-page .myst-fm-block,
+html.nitic-embed-page .myst-footer-links,
+html.nitic-embed-page .myst-backmatter-parts,
+body:has(.nitic-demo-embed-target) .myst-fm-block,
+body:has(.nitic-demo-embed-target) .myst-footer-links,
+body:has(.nitic-demo-embed-target) .myst-backmatter-parts {
+  display: none !important;
+}
+
+html.nitic-embed-page .myst-jp-nb-block,
+html.nitic-embed-page .myst-demo-frame-block,
+body:has(.nitic-demo-embed-target) .myst-jp-nb-block,
+body:has(.nitic-demo-embed-target) .myst-demo-frame-block {
+  margin: 0 !important;
+}
+
+html.nitic-embed-page .nitic-demo-iframe,
+body:has(.nitic-demo-embed-target) .nitic-demo-iframe {
+  display: block !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+}
+
 @media (min-width: 1280px) {
   :root {
     --lecture-top-nav-height: 32px;
@@ -271,6 +337,67 @@
 
   article.article div:has(> iframe[title]) > iframe {
     height: 100% !important;
+  }
+
+  html.nitic-embed-page body,
+  body:has(.nitic-demo-embed-target) {
+    margin: 0 !important;
+    background: #fff !important;
+  }
+
+  html.nitic-embed-page .myst-top-nav,
+  html.nitic-embed-page .myst-primary-sidebar,
+  html.nitic-embed-page .myst-skip-to-article,
+  body:has(.nitic-demo-embed-target) .myst-top-nav,
+  body:has(.nitic-demo-embed-target) .myst-primary-sidebar,
+  body:has(.nitic-demo-embed-target) .myst-skip-to-article {
+    display: none !important;
+  }
+
+  html.nitic-embed-page main.article-grid,
+  body:has(.nitic-demo-embed-target) main.article-grid {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html.nitic-embed-page main.article-grid > :not(article.article),
+  body:has(.nitic-demo-embed-target) main.article-grid > :not(article.article) {
+    display: none !important;
+  }
+
+  html.nitic-embed-page article.article,
+  body:has(.nitic-demo-embed-target) article.article {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html.nitic-embed-page .myst-fm-block,
+  html.nitic-embed-page .myst-footer-links,
+  html.nitic-embed-page .myst-backmatter-parts,
+  body:has(.nitic-demo-embed-target) .myst-fm-block,
+  body:has(.nitic-demo-embed-target) .myst-footer-links,
+  body:has(.nitic-demo-embed-target) .myst-backmatter-parts {
+    display: none !important;
+  }
+
+  html.nitic-embed-page .myst-jp-nb-block,
+  html.nitic-embed-page .myst-demo-frame-block,
+  body:has(.nitic-demo-embed-target) .myst-jp-nb-block,
+  body:has(.nitic-demo-embed-target) .myst-demo-frame-block {
+    margin: 0 !important;
+  }
+
+  html.nitic-embed-page .nitic-demo-iframe,
+  body:has(.nitic-demo-embed-target) .nitic-demo-iframe {
+    display: block !important;
+    width: 100% !important;
+    border-radius: 0 !important;
   }
 
   .myst-fm-colab-link {
