@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backpropagation Shape Animation</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --red: #d93025;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --soft-red: #fce8e6;
+      --shadow: 0 16px 36px rgba(60, 64, 67, .14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: 0; }
+    .meta { color: var(--muted); font-size: 13px; }
+    .controls {
+      display: grid;
+      grid-template-columns: auto auto auto minmax(120px, 220px);
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      min-height: 34px;
+      border: 1px solid #b8c8e8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    input[type="range"] { width: 100%; }
+    main {
+      display: grid;
+      gap: 10px;
+      width: 1540px;
+      max-width: none;
+      margin: 0 auto;
+      padding: 10px 14px;
+    }
+    section {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+    }
+    .status {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 10px;
+      background: var(--paper);
+    }
+    .stat b { display: block; font-size: 19px; line-height: 1.15; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .small { color: var(--muted); font-size: 12px; }
+    .formula-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(132px, 1fr));
+      gap: 7px;
+      padding: 9px;
+      overflow-x: auto;
+      direction: rtl;
+    }
+    .formula {
+      min-height: 68px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px;
+      background: #fbfcff;
+      cursor: pointer;
+      direction: ltr;
+      transition: background .25s ease, border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+    }
+    .formula.active {
+      border-color: #7baaf7;
+      background: #f3f8ff;
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .formula b {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    .math {
+      font-family: "Times New Roman", serif;
+      font-size: 15px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .formula span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 760px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+    .stage {
+      height: 420px;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(215, 221, 229, .5) 1px, transparent 1px),
+        linear-gradient(rgba(215, 221, 229, .5) 1px, transparent 1px),
+        #ffffff;
+      background-size: 42px 42px;
+    }
+    .formula-stage {
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+    .expression {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+    }
+    .expression-break {
+      flex-basis: 100%;
+      height: 0;
+    }
+    .shape-block {
+      position: relative;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--blue);
+      border-radius: 8px;
+      background: var(--soft-blue);
+      box-shadow: 0 12px 26px rgba(26, 115, 232, .16);
+    }
+    .shape-block.result {
+      border-color: var(--green);
+      background: var(--soft-green);
+      box-shadow: 0 12px 26px rgba(24, 128, 56, .16);
+    }
+    .shape-block.loss {
+      border-color: var(--red);
+      background: var(--soft-red);
+      box-shadow: 0 12px 26px rgba(217, 48, 37, .14);
+    }
+    .cells {
+      position: absolute;
+      inset: 7px;
+      display: grid;
+      gap: 3px;
+      opacity: .18;
+    }
+    .cell {
+      border: 1px solid rgba(60, 64, 67, .24);
+      border-radius: 3px;
+      background: rgba(255,255,255,.68);
+    }
+    .shape-text {
+      display: grid;
+      gap: 5px;
+      text-align: center;
+      line-height: 1.15;
+      z-index: 1;
+    }
+    .shape-text b {
+      font-family: "Times New Roman", serif;
+      font-size: 22px;
+    }
+    .shape-text span {
+      color: var(--muted);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    .operator-token,
+    .function-token {
+      display: grid;
+      place-items: center;
+      min-width: 48px;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: white;
+      color: var(--ink);
+      font-family: "Times New Roman", serif;
+      font-size: 26px;
+      font-weight: 800;
+      box-shadow: 0 8px 18px rgba(60, 64, 67, .08);
+    }
+    .function-token {
+      min-width: 86px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+    }
+    .expression-note {
+      width: 100%;
+      margin-top: 22px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .side {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+    .detail {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fbfcff;
+    }
+    .detail h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+    .equation-now {
+      border: 1px solid #7baaf7;
+      border-radius: 8px;
+      padding: 9px;
+      background: #f3f8ff;
+      font-family: "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 1.35;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .shape-note {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 4px;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 5px 6px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 650;
+    }
+    td {
+      border-top: 1px solid #d9e4f7;
+      border-bottom: 1px solid #d9e4f7;
+      background: var(--soft-blue);
+    }
+    td:first-child {
+      border-left: 1px solid #d9e4f7;
+      border-radius: 5px 0 0 5px;
+      text-align: center;
+      font-weight: 750;
+    }
+    td:last-child {
+      border-right: 1px solid #d9e4f7;
+      border-radius: 0 5px 5px 0;
+    }
+    .vector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: white;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .pill.active {
+      border-color: #7baaf7;
+      background: var(--soft-blue);
+      font-weight: 750;
+    }
+    .flow-list {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .flow-list li {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 5px 7px;
+      background: white;
+    }
+    .side .detail:last-child .flow-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .flow-list li.active {
+      border-color: #7baaf7;
+      background: var(--soft-blue);
+      color: var(--ink);
+      font-weight: 650;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      padding: 0 12px 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .swatch {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+    @media (max-width: 980px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .controls { grid-template-columns: auto auto auto 1fr; width: 100%; }
+      .status { grid-template-columns: repeat(2, 1fr); }
+      .workspace { grid-template-columns: 1fr; }
+      .formula-strip { grid-template-columns: repeat(8, 170px); }
+    }
+    @media (max-width: 560px) {
+      .status { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: repeat(3, auto); }
+      .controls input { grid-column: 1 / -1; }
+      .stage, .formula-stage { min-height: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>ニューラルネットワーク: 逆伝播の形状</h1>
+      <div class="meta">batch_size = 2, input = 4, hidden = 5, classes = 3 の勾配形状を追う</div>
+    </div>
+    <div class="controls">
+      <button id="play" onclick="window.__backwardToggle()">一時停止</button>
+      <button id="prev" onclick="window.__backwardPrev()">戻る</button>
+      <button id="next" onclick="window.__backwardNext()">進む</button>
+      <input id="speed" type="range" min="900" max="2800" value="1700" step="50" aria-label="speed">
+    </div>
+  </header>
+
+  <main>
+    <div class="status">
+      <div class="stat"><b id="stepName">出力層の誤差</b><span>現在の計算</span></div>
+      <div class="stat"><b id="shapeIn">(2, 3)</b><span>入力される勾配</span></div>
+      <div class="stat"><b id="shapeOut">(2, 3)</b><span>出力される勾配</span></div>
+      <div class="stat"><b id="target">dL</b><span>求める量</span></div>
+    </div>
+
+    <section>
+      <div class="panel-head">
+        <h2>数式の流れ</h2>
+        <span class="small">緑がこのステップで得られる勾配</span>
+      </div>
+      <div class="formula-strip" id="formulaStrip"></div>
+    </section>
+
+    <section>
+      <div class="panel-head">
+        <h2>逆伝播の形状アニメーション</h2>
+        <span class="small">順伝播で保存した X, Z¹, A¹, W² を使って勾配を戻す</span>
+      </div>
+      <div class="workspace">
+        <div class="stage" id="stage"></div>
+        <aside class="side">
+          <div class="detail">
+            <h3>現在の数式</h3>
+            <div class="equation-now" id="equationNow"></div>
+            <div class="shape-note" id="shapeNote"></div>
+          </div>
+          <div class="detail">
+            <h3 id="inputTitle">入力値</h3>
+            <div id="inputValues"></div>
+          </div>
+          <div class="detail">
+            <h3 id="outputTitle">出力値</h3>
+            <div id="outputValues"></div>
+          </div>
+          <div class="detail">
+            <h3>逆向きの計算順</h3>
+            <ul class="flow-list" id="flowList"></ul>
+          </div>
+        </aside>
+      </div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--soft-blue); border:1px solid #7baaf7;"></i>参照する値・流れてきた勾配</span>
+        <span><i class="swatch" style="background:var(--soft-green); border:1px solid #188038;"></i>このステップで得る勾配</span>
+        <span><i class="swatch" style="background:var(--soft-red); border:1px solid #d93025;"></i>損失から出発する量</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+const matrices = {
+  P: { label: "P", shape: [2, 3], value: "softmax" },
+  Y: { label: "Y", shape: [2, 3], value: "one-hot(y)" },
+  dL: { label: "dL", shape: [2, 3], value: "P - Y" },
+  A1: { label: "A¹", shape: [2, 5], value: "hidden" },
+  A1T: { label: "(A¹)ᵀ", shape: [5, 2], value: "transpose" },
+  dW2: { label: "dW²", shape: [5, 3], value: "grad" },
+  db2: { label: "db²", shape: [1, 3], value: "grad" },
+  W2: { label: "W²", shape: [5, 3], value: "weight" },
+  W2T: { label: "(W²)ᵀ", shape: [3, 5], value: "transpose" },
+  dA1: { label: "dA¹", shape: [2, 5], value: "grad" },
+  Z1: { label: "Z¹", shape: [2, 5], value: "pre-activation" },
+  mask: { label: "1[Z¹>0]", shape: [2, 5], value: "ReLU mask" },
+  dZ1: { label: "dZ¹", shape: [2, 5], value: "grad" },
+  X: { label: "X", shape: [2, 4], value: "batch_x" },
+  XT: { label: "Xᵀ", shape: [4, 2], value: "transpose" },
+  W1: { label: "W¹", shape: [4, 5], value: "weight" },
+  dW1: { label: "dW¹", shape: [4, 5], value: "grad" },
+  b1: { label: "b¹", shape: [1, 5], value: "bias" },
+  db1: { label: "db¹", shape: [1, 5], value: "grad" },
+  b2: { label: "b²", shape: [1, 3], value: "bias" },
+};
+
+const steps = [
+  {
+    name: "出力層の誤差",
+    formula: "dL = (P - Y) / B",
+    note: "softmax + cross entropy では、logits への勾配は P - Y になる。B=2 で平均するので形状は (2,3) のまま。",
+    shapeIn: "P,Y: (2,3)",
+    shapeOut: "dL: (2,3)",
+    target: "dL",
+    tokens: [
+      ["block", "dL", "result"], ["op", "="], ["op", "("], ["block", "P"], ["op", "-"], ["block", "Y"], ["op", ")"], ["op", "/"], ["fn", "B=2"],
+    ],
+  },
+  {
+    name: "2層目の重み勾配",
+    formula: "dW² = (A¹)ᵀ · dL",
+    note: "(A¹)ᵀ は (5,2)、dL は (2,3)。内側の2が消えて、dW² は W² と同じ (5,3) になる。",
+    shapeIn: "(5,2) · (2,3)",
+    shapeOut: "dW²: (5,3)",
+    target: "dW²",
+    tokens: [
+      ["block", "dW2", "result"], ["op", "="], ["block", "A1T"], ["op", "·"], ["block", "dL"],
+    ],
+  },
+  {
+    name: "2層目のバイアス勾配",
+    formula: "db² = sum(dL, axis=0)",
+    note: "バッチ方向の2行を合計する。クラスごとに1つのバイアスなので db² は (1,3)。",
+    shapeIn: "dL: (2,3)",
+    shapeOut: "db²: (1,3)",
+    target: "db²",
+    tokens: [
+      ["block", "db2", "result"], ["op", "="], ["fn", "sum axis=0"], ["op", "("], ["block", "dL"], ["op", ")"],
+    ],
+  },
+  {
+    name: "隠れ層へ戻す",
+    formula: "dA¹ = dL · (W²)ᵀ",
+    note: "出力層から来た dL を W² の転置で隠れ層側へ戻す。(2,3) · (3,5) なので dA¹ は (2,5)。",
+    shapeIn: "(2,3) · (3,5)",
+    shapeOut: "dA¹: (2,5)",
+    target: "dA¹",
+    tokens: [
+      ["block", "dA1", "result"], ["op", "="], ["block", "dL"], ["op", "·"], ["block", "W2T"],
+    ],
+  },
+  {
+    name: "ReLUを逆伝播",
+    formula: "dZ¹ = dA¹ * 1[Z¹ > 0]",
+    note: "ReLU の局所微分は Z¹ が正なら1、そうでなければ0。要素ごとの積なので形状は (2,5) のまま。",
+    shapeIn: "(2,5) * (2,5)",
+    shapeOut: "dZ¹: (2,5)",
+    target: "dZ¹",
+    tokens: [
+      ["block", "dZ1", "result"], ["op", "="], ["block", "dA1"], ["op", "*"], ["block", "mask"],
+    ],
+  },
+  {
+    name: "1層目の重み勾配",
+    formula: "dW¹ = Xᵀ · dZ¹",
+    note: "Xᵀ は (4,2)、dZ¹ は (2,5)。内側の2が消えて、dW¹ は W¹ と同じ (4,5) になる。",
+    shapeIn: "(4,2) · (2,5)",
+    shapeOut: "dW¹: (4,5)",
+    target: "dW¹",
+    tokens: [
+      ["block", "dW1", "result"], ["op", "="], ["block", "XT"], ["op", "·"], ["block", "dZ1"],
+    ],
+  },
+  {
+    name: "1層目のバイアス勾配",
+    formula: "db¹ = sum(dZ¹, axis=0)",
+    note: "隠れユニット5個それぞれのバイアス勾配を、バッチ方向に合計する。db¹ は (1,5)。",
+    shapeIn: "dZ¹: (2,5)",
+    shapeOut: "db¹: (1,5)",
+    target: "db¹",
+    tokens: [
+      ["block", "db1", "result"], ["op", "="], ["fn", "sum axis=0"], ["op", "("], ["block", "dZ1"], ["op", ")"],
+    ],
+  },
+  {
+    name: "パラメータ更新",
+    formula: "W¹ ← W¹ - η dW¹<br>b¹ ← b¹ - η db¹<br>W² ← W² - η dW²<br>b² ← b² - η db²",
+    note: "求めた dW¹, db¹, dW², db² を使ってパラメータを更新する。形状は各パラメータと完全に一致する。",
+    shapeIn: "W,b と同じ形",
+    shapeOut: "updated params",
+    target: "update",
+    tokens: [
+      ["block", "W1", "result"], ["op", "←"], ["block", "W1"], ["op", "-"], ["fn", "η"], ["block", "dW1"],
+      ["br"],
+      ["block", "b1", "result"], ["op", "←"], ["block", "b1"], ["op", "-"], ["fn", "η"], ["block", "db1"],
+      ["br"],
+      ["block", "W2", "result"], ["op", "←"], ["block", "W2"], ["op", "-"], ["fn", "η"], ["block", "dW2"],
+      ["br"],
+      ["block", "b2", "result"], ["op", "←"], ["block", "b2"], ["op", "-"], ["fn", "η"], ["block", "db2"],
+    ],
+  },
+];
+
+function valueTable(headers, rows) {
+  return `
+    <table>
+      <thead><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(row => `<tr>${row.map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>
+  `;
+}
+
+function valuePills(items) {
+  return `<div class="vector">${items.map(item => `<span class="pill${item[2] ? " active" : ""}">${item[0]}: ${item[1]}</span>`).join("")}</div>`;
+}
+
+const sidePanels = [
+  {
+    inputTitle: "入力値: P, Y",
+    input: valueTable(["row", "P", "Y"], [["0", "[.06, .18, .76]", "[0, 0, 1]"], ["1", "[.81, .15, .04]", "[1, 0, 0]"]]),
+    outputTitle: "出力値: dL = (P - Y) / B",
+    output: valueTable(["row", "c0", "c1", "c2"], [["0", ".03", ".09", "-.12"], ["1", "-.10", ".08", ".02"]]),
+  },
+  {
+    inputTitle: "入力値: A¹, dL",
+    input: `${valueTable(["row", "a1", "a2", "a3", "a4", "a5"], [["0", "2.1", "0", "1.2", ".7", "0"], ["1", "0", "1.4", ".3", "0", ".9"]])}${valueTable(["row", "d0", "d1", "d2"], [["0", ".03", ".09", "-.12"], ["1", "-.10", ".08", ".02"]])}`,
+    outputTitle: "出力値: dW²",
+    output: valueTable(["hidden", "c0", "c1", "c2"], [["1", ".06", ".19", "-.25"], ["2", "-.14", ".11", ".03"], ["3", ".01", ".13", "-.14"], ["4", ".02", ".06", "-.08"], ["5", "-.09", ".07", ".02"]]),
+  },
+  {
+    inputTitle: "入力値: dL",
+    input: valueTable(["row", "d0", "d1", "d2"], [["0", ".03", ".09", "-.12"], ["1", "-.10", ".08", ".02"]]),
+    outputTitle: "出力値: db² = sum(dL, axis=0)",
+    output: valueTable(["bias", "c0", "c1", "c2"], [["db²", "-.07", ".17", "-.10"]]),
+  },
+  {
+    inputTitle: "入力値: dL, (W²)ᵀ",
+    input: `${valueTable(["row", "d0", "d1", "d2"], [["0", ".03", ".09", "-.12"], ["1", "-.10", ".08", ".02"]])}${valueTable(["class", "h1", "h2", "h3", "h4", "h5"], [["0", ".2", "-.3", ".1", ".4", "-.2"], ["1", "-.4", ".5", ".2", "-.1", ".3"], ["2", ".1", ".2", "-.5", ".3", ".4"]])}`,
+    outputTitle: "出力値: dA¹",
+    output: valueTable(["row", "h1", "h2", "h3", "h4", "h5"], [["0", "-.04", ".01", ".08", "-.03", "-.03"], ["1", "-.05", ".07", "-.00", "-.04", ".05"]]),
+  },
+  {
+    inputTitle: "入力値: dA¹, 1[Z¹ > 0]",
+    input: `${valueTable(["row", "h1", "h2", "h3", "h4", "h5"], [["0", "-.04", ".01", ".08", "-.03", "-.03"], ["1", "-.05", ".07", "-.00", "-.04", ".05"]])}${valueTable(["row", "h1", "h2", "h3", "h4", "h5"], [["0", "1", "0", "1", "1", "0"], ["1", "0", "1", "1", "0", "1"]])}`,
+    outputTitle: "出力値: dZ¹",
+    output: valueTable(["row", "h1", "h2", "h3", "h4", "h5"], [["0", "-.04", "0", ".08", "-.03", "0"], ["1", "0", ".07", "-.00", "0", ".05"]]),
+  },
+  {
+    inputTitle: "入力値: Xᵀ, dZ¹",
+    input: `${valueTable(["feature", "row0", "row1"], [["x1", "6.47", "4.81"], ["x2", "3.20", "3.58"], ["x3", "5.39", "1.16"], ["x4", "1.99", ".14"]])}${valueTable(["row", "h1", "h2", "h3", "h4", "h5"], [["0", "-.04", "0", ".08", "-.03", "0"], ["1", "0", ".07", "-.00", "0", ".05"]])}`,
+    outputTitle: "出力値: dW¹",
+    output: valueTable(["feature", "h1", "h2", "h3", "h4", "h5"], [["x1", "-.26", ".34", ".52", "-.19", ".24"], ["x2", "-.13", ".25", ".26", "-.10", ".18"], ["x3", "-.22", ".08", ".43", "-.16", ".06"], ["x4", "-.08", ".01", ".16", "-.06", ".01"]]),
+  },
+  {
+    inputTitle: "入力値: dZ¹",
+    input: valueTable(["row", "h1", "h2", "h3", "h4", "h5"], [["0", "-.04", "0", ".08", "-.03", "0"], ["1", "0", ".07", "-.00", "0", ".05"]]),
+    outputTitle: "出力値: db¹ = sum(dZ¹, axis=0)",
+    output: valueTable(["bias", "h1", "h2", "h3", "h4", "h5"], [["db¹", "-.04", ".07", ".08", "-.03", ".05"]]),
+  },
+  {
+    inputTitle: "入力値: パラメータと勾配",
+    input: valuePills([["W¹", "(4,5)"], ["dW¹", "(4,5)"], ["b¹", "(1,5)"], ["db¹", "(1,5)"], ["W²", "(5,3)"], ["dW²", "(5,3)"], ["b²", "(1,3)"], ["db²", "(1,3)"]]),
+    outputTitle: "出力値: 更新後のパラメータ",
+    output: valuePills([["W¹ - ηdW¹", "(4,5)", true], ["b¹ - ηdb¹", "(1,5)", true], ["W² - ηdW²", "(5,3)", true], ["b² - ηdb²", "(1,3)", true]]),
+  },
+];
+
+let index = 0;
+let playing = true;
+let timer = null;
+
+function shapeSize(shape) {
+  return { width: 24 + shape[1] * 22, height: 28 + shape[0] * 32 };
+}
+
+function blockHtml(key, role = "") {
+  const m = matrices[key];
+  const size = shapeSize(m.shape);
+  const cells = Array.from({ length: Math.min(30, m.shape[0] * m.shape[1]) }, () => '<i class="cell"></i>').join("");
+  const className = ["shape-block", role].filter(Boolean).join(" ");
+  return `
+    <div class="${className}" style="width:${size.width}px;height:${size.height}px;">
+      <div class="cells" style="grid-template-columns: repeat(${m.shape[1]}, 1fr); grid-template-rows: repeat(${m.shape[0]}, 1fr);">${cells}</div>
+      <div class="shape-text">
+        <b>${m.label}</b>
+        <span>${m.shape[0]} × ${m.shape[1]}</span>
+        <span>${m.value}</span>
+      </div>
+    </div>
+  `;
+}
+
+function tokenHtml(token) {
+  const [kind, value, role] = token;
+  if (kind === "block") return blockHtml(value, role || "");
+  if (kind === "fn") return `<div class="function-token">${value}</div>`;
+  if (kind === "br") return `<div class="expression-break"></div>`;
+  return `<div class="operator-token">${value}</div>`;
+}
+
+function buildFormulas() {
+  const root = document.getElementById("formulaStrip");
+  root.innerHTML = "";
+  steps.forEach((step, i) => {
+    const node = document.createElement("div");
+    node.className = "formula";
+    node.id = `f-${i}`;
+    node.innerHTML = `<b>${i + 1}. ${step.name}</b><div class="math">${step.formula}</div><span>${step.shapeOut}</span>`;
+    node.addEventListener("click", () => {
+      index = i;
+      render();
+      schedule();
+    });
+    root.appendChild(node);
+  });
+}
+
+function buildFlowList() {
+  const root = document.getElementById("flowList");
+  root.innerHTML = steps.map((step, i) => `<li id="flow-${i}">${i + 1}. ${step.target}</li>`).join("");
+}
+
+function render() {
+  const step = steps[index];
+  const side = sidePanels[index];
+  document.getElementById("stepName").textContent = step.name;
+  document.getElementById("shapeIn").textContent = step.shapeIn;
+  document.getElementById("shapeOut").textContent = step.shapeOut;
+  document.getElementById("target").textContent = step.target;
+  document.getElementById("equationNow").innerHTML = step.formula;
+  document.getElementById("shapeNote").textContent = step.note;
+  document.getElementById("inputTitle").textContent = side.inputTitle;
+  document.getElementById("inputValues").innerHTML = side.input;
+  document.getElementById("outputTitle").textContent = side.outputTitle;
+  document.getElementById("outputValues").innerHTML = side.output;
+  document.querySelectorAll(".formula").forEach((node, i) => node.classList.toggle("active", i === index));
+  document.querySelectorAll("#flowList li").forEach((node, i) => node.classList.toggle("active", i === index));
+  document.getElementById("stage").innerHTML = `
+    <div class="formula-stage">
+      <div class="expression">${step.tokens.map(tokenHtml).join("")}</div>
+      <div class="expression-note">${step.note}</div>
+    </div>
+  `;
+}
+
+function goNext() {
+  index = (index + 1) % steps.length;
+  render();
+}
+
+function goPrev() {
+  index = (index - 1 + steps.length) % steps.length;
+  render();
+}
+
+function schedule() {
+  clearInterval(timer);
+  if (playing) timer = setInterval(goNext, Number(document.getElementById("speed").value));
+}
+
+window.__backwardToggle = () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "一時停止" : "再生";
+  schedule();
+};
+window.__backwardNext = () => {
+  goNext();
+  schedule();
+};
+window.__backwardPrev = () => {
+  goPrev();
+  schedule();
+};
+document.getElementById("speed").addEventListener("input", schedule);
+
+buildFormulas();
+buildFlowList();
+render();
+schedule();
+  </script>
+</body>
+</html>

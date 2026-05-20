@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forward and Backward Training Animation</title>
+  <script>
+    window.MathJax = {
+      tex: {inlineMath: [["\\(", "\\)"]]},
+      chtml: {scale: 0.92},
+      options: {enableMenu: false},
+      startup: {
+        pageReady: () => window.MathJax.startup.defaultPageReady().then(() => {
+          window.mathJaxReady = true;
+          if (typeof render === "function") render();
+        })
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --red: #d93025;
+      --yellow: #fbbc04;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --soft-red: #fce8e6;
+      --soft-yellow: #fff7d6;
+      --shadow: 0 14px 32px rgba(60, 64, 67, .13);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: 0; }
+    .meta { color: var(--muted); font-size: 13px; }
+    .controls {
+      display: grid;
+      grid-template-columns: auto auto auto minmax(120px, 220px);
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      min-height: 34px;
+      border: 1px solid #b8c8e8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    input[type="range"] { width: 100%; }
+    main {
+      display: grid;
+      gap: 10px;
+      width: 1600px;
+      max-width: none;
+      margin: 0 auto;
+      padding: 10px 14px;
+    }
+    section {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+    }
+    .status {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 7px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 10px;
+      background: var(--paper);
+    }
+    .stat b {
+      display: block;
+      min-height: 23px;
+      font-size: 19px;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: 620px 936px;
+      gap: 12px;
+      padding: 10px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .small { color: var(--muted); font-size: 12px; }
+    .stage {
+      min-height: 400px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(215, 221, 229, .48) 1px, transparent 1px),
+        linear-gradient(rgba(215, 221, 229, .48) 1px, transparent 1px),
+        #ffffff;
+      background-size: 42px 42px;
+    }
+    .network-wrap {
+      position: relative;
+      height: 300px;
+    }
+    svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .edge {
+      stroke: #a8b5c8;
+      stroke-width: 1.6;
+      opacity: .7;
+      transition: stroke .25s ease, stroke-width .25s ease, opacity .25s ease;
+    }
+    .edge.active.forward { stroke: var(--blue); stroke-width: 3.2; opacity: 1; }
+    .edge.active.backward { stroke: var(--red); stroke-width: 3.2; opacity: 1; }
+    .arrow {
+      fill: none;
+      stroke: #8d9aae;
+      stroke-width: 2;
+      marker-end: url(#arrowHead);
+      opacity: .82;
+      transition: stroke .25s ease, stroke-width .25s ease, opacity .25s ease;
+    }
+    .arrow.active.forward { stroke: var(--blue); stroke-width: 3.2; opacity: 1; }
+    .arrow.active.loss { stroke: var(--red); stroke-width: 3.2; opacity: 1; }
+    .arrow.active.backward { stroke: var(--red); stroke-width: 3.2; opacity: 1; }
+    .unit {
+      fill: white;
+      stroke: #3c4043;
+      stroke-width: 1.4;
+      transition: fill .25s ease, stroke .25s ease, transform .25s ease;
+    }
+    .unit.active.forward { fill: var(--soft-blue); stroke: var(--blue); }
+    .unit.active.backward { fill: var(--soft-red); stroke: var(--red); }
+    .unit.updated { fill: var(--soft-green); stroke: var(--green); }
+    .data-packet {
+      fill: var(--blue);
+      filter: drop-shadow(0 5px 7px rgba(26,115,232,.28));
+    }
+    .data-packet.backward {
+      fill: var(--red);
+      filter: drop-shadow(0 5px 7px rgba(217,48,37,.25));
+    }
+    .data-packet.update {
+      fill: var(--yellow);
+      filter: drop-shadow(0 5px 7px rgba(251,188,4,.25));
+    }
+    .loss-block {
+      fill: #fff;
+      stroke: var(--red);
+      stroke-width: 2;
+      rx: 8;
+      transition: fill .25s ease, stroke-width .25s ease;
+    }
+    .loss-block.active { fill: var(--soft-red); stroke-width: 3; }
+    .loss-text {
+      fill: var(--ink);
+      font-size: 13px;
+      font-weight: 750;
+      text-anchor: middle;
+    }
+    .symbol-label {
+      fill: var(--ink);
+      font-family: "Times New Roman", serif;
+      font-size: 22px;
+      font-weight: 750;
+      text-anchor: middle;
+    }
+    .gradient-label {
+      fill: var(--red);
+      font-family: "Times New Roman", serif;
+      font-size: 17px;
+      font-weight: 750;
+      text-anchor: middle;
+    }
+    .math-label {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      color: var(--red);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1;
+      text-align: center;
+    }
+    .layer-gradient-label {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      color: var(--red);
+      font-size: 14px;
+      font-weight: 750;
+      line-height: 1;
+      text-align: center;
+    }
+    .layer-label {
+      fill: var(--muted);
+      font-size: 12px;
+      text-anchor: middle;
+    }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(132px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .result {
+      min-height: 68px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px;
+      background: #fbfcff;
+      transition: background .25s ease, border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+    }
+    .result.active {
+      border-color: #7baaf7;
+      background: #f3f8ff;
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .result.done { border-color: #a8dab5; background: var(--soft-green); }
+    .result.loss { border-color: #f4aea8; background: var(--soft-red); }
+    .result b { display: block; margin-bottom: 5px; font-size: 13px; }
+    .result code {
+      display: block;
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.24;
+      white-space: pre-wrap;
+    }
+    .side {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      justify-content: start;
+      width: 920px;
+    }
+    .top-panels {
+      display: grid;
+      grid-template-columns: 300px 350px;
+      gap: 12px;
+      align-items: start;
+    }
+    .bottom-panels {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+      gap: 12px;
+      align-items: start;
+      width: 100%;
+    }
+    .code {
+      margin: 0;
+      overflow: auto;
+      height: 262px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .phase-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+    }
+    .gradient-panel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      padding: 10px;
+    }
+    .gradient-card {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px;
+      background: #fbfcff;
+      color: var(--muted);
+      transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+    .gradient-card.active {
+      border-color: #f4aea8;
+      background: var(--soft-red);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+    .gradient-card.update.active {
+      border-color: #f4d36d;
+      background: var(--soft-yellow);
+    }
+    .gradient-card b {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+    .gradient-card .math {
+      min-height: 28px;
+      font-size: 13px;
+    }
+    .phase {
+      min-height: 50px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px;
+      background: #fbfcff;
+      transition: background .25s ease, border-color .25s ease, transform .25s ease;
+    }
+    .phase.active {
+      border-color: #7baaf7;
+      background: var(--soft-blue);
+      transform: translateY(-1px);
+    }
+    .phase.backward.active {
+      border-color: #f4aea8;
+      background: var(--soft-red);
+    }
+    .phase.update.active {
+      border-color: #f4d36d;
+      background: var(--soft-yellow);
+    }
+    .phase.loss-plot.active {
+      border-color: #a8dab5;
+      background: var(--soft-green);
+    }
+    .phase b { display: block; font-size: 12px; }
+    .phase span { color: var(--muted); font-size: 11px; }
+    .chart-phase {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 10px 10px 0;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .chart-phase b {
+      color: var(--ink);
+      font-size: 13px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+    @media (max-width: 900px) {
+      header { align-items: stretch; flex-direction: column; }
+      .controls { grid-template-columns: repeat(3, auto) 1fr; }
+      .workspace { grid-template-columns: 1fr; }
+      .status { grid-template-columns: repeat(2, 1fr); }
+      .results { grid-template-columns: repeat(2, minmax(132px, 1fr)); }
+      .top-panels { grid-template-columns: 1fr; }
+      .bottom-panels { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Forward / Backward / Update の流れ</h1>
+      <div class="meta">入力 X から損失を計算し，backpropagation と SGD 更新を10回くり返す</div>
+    </div>
+    <div class="controls">
+      <button id="play">再生</button>
+      <button id="prev">戻る</button>
+      <button id="next">進む</button>
+      <input id="frame" type="range" min="0" max="0" value="0">
+    </div>
+  </header>
+
+  <main>
+    <div class="status">
+      <div class="stat"><b id="epoch">1 / 10</b><span>training step</span></div>
+      <div class="stat"><b id="phaseName">forward</b><span>phase</span></div>
+      <div class="stat"><b id="lossValue">-</b><span>loss</span></div>
+      <div class="stat"><b id="predValue">-</b><span>prediction</span></div>
+      <div class="stat"><b id="paramValue">-</b><span>|gradient|</span></div>
+    </div>
+
+    <section>
+      <div class="panel-head">
+        <h2>学習サイクル</h2>
+        <span class="small">青: forward，赤: backward，黄: update，緑: 計算済み</span>
+      </div>
+      <div class="workspace">
+        <div class="stage">
+          <div class="network-wrap">
+            <svg id="network" viewBox="0 0 900 330" role="img" aria-label="Neural network"></svg>
+          </div>
+          <div id="results" class="results"></div>
+        </div>
+        <div class="side">
+          <div class="top-panels">
+            <section>
+              <div class="panel-head">
+                <h2>モデルコード</h2>
+                <span class="small">Linear の入出力から図を作る</span>
+              </div>
+              <pre id="codeView" class="code"></pre>
+            </section>
+            <section>
+              <div class="panel-head">
+                <h2>損失の変化</h2>
+                <span class="small">loss が計算されるたびに追加</span>
+              </div>
+              <div id="chartPhase" class="chart-phase"></div>
+              <canvas id="lossChart" width="350" height="230"></canvas>
+            </section>
+          </div>
+          <div class="bottom-panels">
+            <section>
+              <div class="panel-head">
+                <h2>処理ステップ</h2>
+                <span class="small" id="detailText"></span>
+              </div>
+              <div id="phaseList" class="phase-list"></div>
+            </section>
+            <section>
+              <div class="panel-head">
+                <h2>パラメータの勾配</h2>
+                <span class="small">backward の進みに合わせて表示</span>
+              </div>
+              <div id="gradientPanel" class="gradient-panel"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script id="model-code" type="text/plain">toy_model = nn.Sequential(
+    nn.Linear(2, 4),
+    nn.ReLU(),
+    nn.Linear(4, 1),
+)
+toy_optimizer = torch.optim.SGD(toy_model.parameters(), lr=0.1)
+toy_criterion = nn.MSELoss()
+
+toy_x = torch.tensor([[0.5, -1.0], [1.0, 2.0]], dtype=torch.float32)
+toy_y = torch.tensor([[1.0], [0.0]], dtype=torch.float32)</script>
+
+  <script>
+const code = document.getElementById("model-code").textContent.trim();
+document.getElementById("codeView").textContent = code;
+
+const linears = [...code.matchAll(/nn\.Linear\((\d+),\s*(\d+)\)/g)].map(m => ({
+  inFeatures: Number(m[1]),
+  outFeatures: Number(m[2]),
+}));
+const layerSizes = [linears[0].inFeatures].concat(linears.map(l => l.outFeatures));
+const X = [[0.5, -1.0], [1.0, 2.0]];
+const Y = [[1.0], [0.0]];
+const learningRate = 0.1;
+const totalEpochs = 10;
+const phases = [
+  {key: "input", label: "X -> input", desc: "入力データを入力層へ渡す", kind: "forward"},
+  {key: "z1", label: "Linear 1", desc: "\\(Z_1 = XW_1^T + b_1\\)", kind: "forward"},
+  {key: "a1", label: "ReLU", desc: "\\(A_1 = \\max(0, Z_1)\\)", kind: "forward"},
+  {key: "pred", label: "Linear 2", desc: "\\(\\hat{Y} = A_1W_2^T + b_2\\)", kind: "forward"},
+  {key: "loss", label: "Loss", desc: "\\(Loss = \\mathrm{MSE}(\\hat{Y}, Y)\\)", kind: "forward"},
+  {key: "plotLoss", label: "Plot loss", desc: "損失を折れ線グラフへ追加", kind: "loss-plot"},
+  {key: "gradOut", label: "Backward 2", desc: "出力層の勾配を求める", kind: "backward"},
+  {key: "gradHidden", label: "Backward 1", desc: "隠れ層へ勾配を戻す", kind: "backward"},
+  {key: "update", label: "SGD step", desc: "\\(\\theta \\leftarrow \\theta - \\eta\\nabla_\\theta Loss\\)", kind: "update"},
+];
+
+let params = {
+  W1: [[0.30, -0.20], [-0.45, 0.25], [0.15, 0.40], [0.35, -0.10]],
+  b1: [0.10, -0.05, 0.00, 0.05],
+  W2: [[0.40, -0.35, 0.25, 0.30]],
+  b2: [0.00],
+};
+
+function matmul(A, B) {
+  return A.map(row => B[0].map((_, j) => row.reduce((s, v, k) => s + v * B[k][j], 0)));
+}
+function transpose(A) {
+  return A[0].map((_, j) => A.map(row => row[j]));
+}
+function addBias(A, b) {
+  return A.map(row => row.map((v, j) => v + b[j]));
+}
+function relu(A) {
+  return A.map(row => row.map(v => Math.max(0, v)));
+}
+function reluGrad(A) {
+  return A.map(row => row.map(v => v > 0 ? 1 : 0));
+}
+function mse(pred, target) {
+  let total = 0;
+  for (let i = 0; i < pred.length; i++) {
+    for (let j = 0; j < pred[i].length; j++) total += (pred[i][j] - target[i][j]) ** 2;
+  }
+  return total / pred.length;
+}
+function cloneParams(p) {
+  return {
+    W1: p.W1.map(row => row.slice()),
+    b1: p.b1.slice(),
+    W2: p.W2.map(row => row.slice()),
+    b2: p.b2.slice(),
+  };
+}
+function forward(p) {
+  const z1 = addBias(matmul(X, transpose(p.W1)), p.b1);
+  const a1 = relu(z1);
+  const pred = addBias(matmul(a1, transpose(p.W2)), p.b2);
+  return {z1, a1, pred, loss: mse(pred, Y)};
+}
+function backward(p, f) {
+  const n = X.length;
+  const dPred = f.pred.map((row, i) => row.map((v, j) => 2 * (v - Y[i][j]) / n));
+  const dW2 = matmul(transpose(dPred), f.a1);
+  const db2 = dPred[0].map((_, j) => dPred.reduce((s, row) => s + row[j], 0));
+  const dA1 = matmul(dPred, p.W2);
+  const rz = reluGrad(f.z1);
+  const dZ1 = dA1.map((row, i) => row.map((v, j) => v * rz[i][j]));
+  const dW1 = matmul(transpose(dZ1), X);
+  const db1 = dZ1[0].map((_, j) => dZ1.reduce((s, row) => s + row[j], 0));
+  const gradNorm = Math.sqrt([dW1, dW2].flat(2).concat(db1, db2).reduce((s, v) => s + v * v, 0));
+  return {dPred, dW1, db1, dW2, db2, gradNorm};
+}
+function update(p, g) {
+  p.W1 = p.W1.map((row, i) => row.map((v, j) => v - learningRate * g.dW1[i][j]));
+  p.b1 = p.b1.map((v, i) => v - learningRate * g.db1[i]);
+  p.W2 = p.W2.map((row, i) => row.map((v, j) => v - learningRate * g.dW2[i][j]));
+  p.b2 = p.b2.map((v, i) => v - learningRate * g.db2[i]);
+}
+function makeFrames() {
+  const frames = [];
+  let p = cloneParams(params);
+  for (let epoch = 1; epoch <= totalEpochs; epoch++) {
+    const f = forward(p);
+    const g = backward(p, f);
+    phases.forEach((phase, phaseIndex) => {
+      frames.push({epoch, phaseIndex, phase, params: cloneParams(p), forward: f, grad: g});
+    });
+    update(p, g);
+  }
+  return frames;
+}
+const frames = makeFrames();
+
+const svg = document.getElementById("network");
+const slider = document.getElementById("frame");
+const chart = document.getElementById("lossChart");
+const cctx = chart.getContext("2d");
+let index = 0;
+let timer = null;
+slider.max = frames.length - 1;
+
+function fmt(value) {
+  return Number(value).toFixed(4);
+}
+function fmtVector(A) {
+  return "[" + A.map(row => "[" + row.map(v => fmt(v)).join(", ") + "]").join(", ") + "]";
+}
+function displayPhase(phase) {
+  if (phase.kind === "loss-plot") return "forward";
+  return phase.kind;
+}
+function layerPositions() {
+  const startX = 150;
+  const endX = 530;
+  const height = 278;
+  const xGap = layerSizes.length > 1 ? (endX - startX) / (layerSizes.length - 1) : 0;
+  return layerSizes.map((size, li) => {
+    const yGap = height / (size + 1);
+    return Array.from({length: size}, (_, i) => ({x: startX + xGap * li, y: 30 + yGap * (i + 1)}));
+  });
+}
+function lossGeometry() {
+  return {x: 735, y: 142, width: 76, height: 76};
+}
+function activeLayerRange(phase) {
+  if (phase.key === "input") return [0, 0];
+  if (phase.key === "z1" || phase.key === "a1" || phase.key === "gradHidden") return [0, 1];
+  if (phase.key === "pred" || phase.key === "gradOut") return [1, 2];
+  if (phase.key === "loss" || phase.key === "plotLoss") return [2, 2];
+  return [0, 2];
+}
+function activePacketLayer(frame, fromLayer, toLayer) {
+  if (frame.phase.kind === "backward") return toLayer;
+  if (frame.phase.key === "update") return toLayer;
+  return toLayer;
+}
+function arrowMarkerClass(className) {
+  if (className.includes("backward") || className.includes("loss")) return "url(#arrowHeadRed)";
+  if (className.includes("forward")) return "url(#arrowHeadBlue)";
+  return "url(#arrowHead)";
+}
+function setArrow(path, d, className) {
+  path.setAttribute("d", d);
+  path.setAttribute("class", className);
+  path.setAttribute("marker-end", arrowMarkerClass(className));
+}
+function addMathLabel(x, y, latex, className = "math-label", width = 96, height = 52) {
+  const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+  foreignObject.setAttribute("x", x - width / 2);
+  foreignObject.setAttribute("y", y - height / 2);
+  foreignObject.setAttribute("width", width);
+  foreignObject.setAttribute("height", height);
+  const div = document.createElement("div");
+  div.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  div.setAttribute("class", className);
+  div.textContent = latex;
+  foreignObject.appendChild(div);
+  svg.appendChild(foreignObject);
+}
+function addBackwardGradientLabels(positions) {
+  if (!positions.length) return;
+  const labels = [
+    "\\(\\frac{\\partial Loss}{\\partial X}\\)",
+    "\\(\\frac{\\partial Loss}{\\partial Z_1}\\)",
+    "\\(\\frac{\\partial Loss}{\\partial \\hat{Y}}\\)",
+  ];
+  positions.forEach((layer, li) => {
+    const label = labels[li] ?? `\\(\\frac{\\partial Loss}{\\partial H_${li}}\\)`;
+    addMathLabel(layer[0].x, 22, label, "layer-gradient-label", 130, 38);
+  });
+}
+function drawNetwork(frame) {
+  const positions = layerPositions();
+  const [fromLayer, toLayer] = activeLayerRange(frame.phase);
+  const activeKind = frame.phase.kind;
+  const lossBox = lossGeometry();
+  const outputLayer = positions[positions.length - 1];
+  const outputMid = outputLayer[Math.floor(outputLayer.length / 2)];
+  const yhat = {x: 640, y: outputMid.y};
+  svg.innerHTML = "";
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  defs.innerHTML = `
+    <marker id="arrowHead" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#8d9aae"></path>
+    </marker>
+    <marker id="arrowHeadBlue" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#1a73e8"></path>
+    </marker>
+    <marker id="arrowHeadRed" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#d93025"></path>
+    </marker>`;
+  svg.appendChild(defs);
+  if (frame.phase.kind === "backward") {
+    addBackwardGradientLabels(positions);
+  }
+  for (let li = 0; li < positions.length - 1; li++) {
+    positions[li].forEach((from) => {
+      positions[li + 1].forEach((to) => {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", from.x);
+        line.setAttribute("y1", from.y);
+        line.setAttribute("x2", to.x);
+        line.setAttribute("y2", to.y);
+        line.setAttribute("class", "edge" + (li === Math.min(fromLayer, toLayer) && Math.abs(toLayer - fromLayer) === 1 ? ` active ${activeKind}` : ""));
+        svg.appendChild(line);
+      });
+    });
+  }
+  const inputMid = positions[0][Math.floor(positions[0].length / 2)];
+  const inputArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  setArrow(inputArrow, `M82 ${inputMid.y} L126 ${inputMid.y}`, "arrow" + (frame.phase.key === "input" ? " active forward" : ""));
+  svg.appendChild(inputArrow);
+  const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  xLabel.setAttribute("x", 65);
+  xLabel.setAttribute("y", inputMid.y + 7);
+  xLabel.setAttribute("class", "symbol-label");
+  xLabel.textContent = "X";
+  svg.appendChild(xLabel);
+
+  const yhatIn = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  setArrow(
+    yhatIn,
+    frame.phase.key === "gradOut"
+      ? `M${yhat.x - 24} ${yhat.y} L${outputMid.x + 18} ${outputMid.y}`
+      : `M${outputMid.x + 18} ${outputMid.y} L${yhat.x - 24} ${yhat.y}`,
+    "arrow" + (frame.phase.key === "pred" ? " active forward" : frame.phase.key === "gradOut" ? " active backward" : "")
+  );
+  svg.appendChild(yhatIn);
+  if (frame.phase.key === "gradOut") {
+    addMathLabel(yhat.x, yhat.y, "\\(\\frac{\\partial Loss}{\\partial \\hat{Y}}\\)");
+  } else {
+    const yhatLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    yhatLabel.setAttribute("x", yhat.x);
+    yhatLabel.setAttribute("y", yhat.y + 7);
+    yhatLabel.setAttribute("class", "symbol-label");
+    yhatLabel.textContent = "Y\u0302";
+    svg.appendChild(yhatLabel);
+  }
+  const yhatOut = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  setArrow(
+    yhatOut,
+    frame.phase.key === "gradOut"
+      ? `M${lossBox.x - 7} ${lossBox.y + lossBox.height / 2} L${yhat.x + 28} ${yhat.y}`
+      : `M${yhat.x + 28} ${yhat.y} L${lossBox.x - 7} ${lossBox.y + lossBox.height / 2}`,
+    "arrow" + ((frame.phase.key === "loss" || frame.phase.key === "plotLoss") ? " active loss" : frame.phase.key === "gradOut" ? " active backward" : "")
+  );
+  svg.appendChild(yhatOut);
+
+  const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  yLabel.setAttribute("x", lossBox.x + lossBox.width / 2);
+  yLabel.setAttribute("y", 60);
+  yLabel.setAttribute("class", "symbol-label");
+  yLabel.textContent = "Y";
+  svg.appendChild(yLabel);
+  const yArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  setArrow(
+    yArrow,
+    `M${lossBox.x + lossBox.width / 2} 70 L${lossBox.x + lossBox.width / 2} ${lossBox.y - 8}`,
+    "arrow" + ((frame.phase.key === "loss" || frame.phase.key === "plotLoss" || frame.phase.key === "gradOut") ? " active loss" : "")
+  );
+  svg.appendChild(yArrow);
+
+  const lossRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  lossRect.setAttribute("x", lossBox.x);
+  lossRect.setAttribute("y", lossBox.y);
+  lossRect.setAttribute("width", lossBox.width);
+  lossRect.setAttribute("height", lossBox.height);
+  lossRect.setAttribute("class", "loss-block" + ((frame.phase.key === "loss" || frame.phase.key === "plotLoss" || frame.phase.key === "gradOut") ? " active" : ""));
+  svg.appendChild(lossRect);
+  const lossText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  lossText.setAttribute("x", lossBox.x + lossBox.width / 2);
+  lossText.setAttribute("y", lossBox.y + lossBox.height / 2 - 2);
+  lossText.setAttribute("class", "loss-text");
+  lossText.textContent = "Loss";
+  svg.appendChild(lossText);
+  const lossSubText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  lossSubText.setAttribute("x", lossBox.x + lossBox.width / 2);
+  lossSubText.setAttribute("y", lossBox.y + lossBox.height / 2 + 17);
+  lossSubText.setAttribute("class", "layer-label");
+  lossSubText.textContent = "MSE";
+  svg.appendChild(lossSubText);
+
+  positions.forEach((layer, li) => {
+    layer.forEach((pos) => {
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", pos.x);
+      circle.setAttribute("cy", pos.y);
+      circle.setAttribute("r", 13);
+      let cls = "unit";
+      if (frame.phase.key === "update") cls += " updated";
+      else if (frame.phase.key === "plotLoss" && li === toLayer) cls += " active forward";
+      else if (li >= Math.min(fromLayer, toLayer) && li <= Math.max(fromLayer, toLayer)) cls += ` active ${activeKind}`;
+      circle.setAttribute("class", cls);
+      svg.appendChild(circle);
+    });
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", layer[0].x);
+    text.setAttribute("y", 326);
+    text.setAttribute("class", "layer-label");
+    text.textContent = li === 0 ? `input (${layerSizes[li]})` : li === positions.length - 1 ? `output (${layerSizes[li]})` : `hidden (${layerSizes[li]})`;
+    svg.appendChild(text);
+  });
+  const packetLayer = activePacketLayer(frame, fromLayer, toLayer);
+  positions[packetLayer].forEach((point) => {
+    const packet = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    packet.setAttribute("cx", point.x);
+    packet.setAttribute("cy", point.y);
+    packet.setAttribute("r", 10);
+    packet.setAttribute("class", "data-packet"
+      + (frame.phase.kind === "backward" ? " backward" : "")
+      + (frame.phase.key === "update" ? " update" : ""));
+    svg.appendChild(packet);
+  });
+}
+function renderResults(frame) {
+  const f = frame.forward;
+  const shown = {
+    input: frame.phaseIndex >= 0,
+    z1: frame.phaseIndex >= 1,
+    a1: frame.phaseIndex >= 2,
+    pred: frame.phaseIndex >= 3,
+    loss: frame.phaseIndex >= 4,
+    plotLoss: frame.phaseIndex >= 5,
+  };
+  const items = [
+    ["input", "入力 X", fmtVector(X)],
+    ["z1", "Linear 1 の出力 Z1", shown.z1 ? fmtVector(f.z1) : "-"],
+    ["a1", "ReLU 後 A1", shown.a1 ? fmtVector(f.a1) : "-"],
+    ["pred", "予測 Yhat", shown.pred ? fmtVector(f.pred) : "-"],
+    ["loss", "損失 L", shown.loss ? fmt(f.loss) : "-"],
+    ["plotLoss", "損失グラフ", shown.plotLoss ? `epoch ${frame.epoch} を追加` : "-"],
+    ["gradOut", "出力層の勾配", frame.phaseIndex >= 6 ? `|grad| = ${fmt(frame.grad.gradNorm)}` : "-"],
+    ["gradHidden", "隠れ層へ戻る勾配", frame.phaseIndex >= 7 ? "dW1, db1 を計算" : "-"],
+    ["update", "パラメータ更新", frame.phaseIndex >= 8 ? `lr = ${learningRate}` : "-"],
+  ];
+  document.getElementById("results").innerHTML = items.map(([key, title, value]) => {
+    const active = key === frame.phase.key ? " active" : "";
+    const done = shown[key] || frame.phaseIndex >= phases.findIndex(p => p.key === key) ? " done" : "";
+    const loss = key === "loss" && shown.loss ? " loss" : "";
+    return `<div class="result${active}${done}${loss}"><b>${title}</b><code>${value}</code></div>`;
+  }).join("");
+}
+function renderPhases(frame) {
+  document.getElementById("phaseList").innerHTML = phases.map((phase, i) => {
+    const active = i === frame.phaseIndex ? ` active ${phase.kind}` : "";
+    return `<div class="phase${active}"><b>${phase.label}</b><span>${phase.desc}</span></div>`;
+  }).join("");
+}
+function renderGradients(frame) {
+  const showOutput = frame.phaseIndex >= 6;
+  const showHidden = frame.phaseIndex >= 7;
+  const showUpdate = frame.phaseIndex >= 8;
+  const cards = [
+    {
+      key: "outW",
+      title: "出力層 weight",
+      active: frame.phase.key === "gradOut",
+      visible: showOutput,
+      math: "\\(\\frac{\\partial Loss}{\\partial W_2}=\\left(\\frac{\\partial Loss}{\\partial \\hat{Y}}\\right)^T A_1\\)"
+    },
+    {
+      key: "outB",
+      title: "出力層 bias",
+      active: frame.phase.key === "gradOut",
+      visible: showOutput,
+      math: "\\(\\frac{\\partial Loss}{\\partial b_2}=\\sum\\frac{\\partial Loss}{\\partial \\hat{Y}}\\)"
+    },
+    {
+      key: "hiddenW",
+      title: "隠れ層 weight",
+      active: frame.phase.key === "gradHidden",
+      visible: showHidden,
+      math: "\\(\\frac{\\partial Loss}{\\partial W_1}=\\left(\\frac{\\partial Loss}{\\partial Z_1}\\right)^T X\\)"
+    },
+    {
+      key: "hiddenB",
+      title: "隠れ層 bias",
+      active: frame.phase.key === "gradHidden",
+      visible: showHidden,
+      math: "\\(\\frac{\\partial Loss}{\\partial b_1}=\\sum\\frac{\\partial Loss}{\\partial Z_1}\\)"
+    },
+    {
+      key: "updateW",
+      title: "SGD 更新",
+      active: frame.phase.key === "update",
+      visible: showUpdate,
+      update: true,
+      math: "\\(\\theta \\leftarrow \\theta - \\eta\\frac{\\partial Loss}{\\partial \\theta}\\)"
+    },
+  ];
+  document.getElementById("gradientPanel").innerHTML = cards.map(card => {
+    const active = card.active ? ` active${card.update ? " update" : ""}` : "";
+    const math = card.visible ? card.math : "-";
+    return `<div class="gradient-card${active}"><b>${card.title}</b><div class="math">${math}</div></div>`;
+  }).join("");
+}
+function drawLossChart(frame) {
+  cctx.clearRect(0, 0, chart.width, chart.height);
+  const chartPhase = document.getElementById("chartPhase");
+  chartPhase.innerHTML = `<b>現在: ${displayPhase(frame.phase)} / ${frame.phase.label}</b><span>epoch ${frame.epoch}</span>`;
+  cctx.strokeStyle = "#d7dde5";
+  cctx.strokeRect(0.5, 0.5, chart.width - 1, chart.height - 1);
+  const plotted = frames.filter(f => f.phase.key === "plotLoss" && (f.epoch < frame.epoch || (f.epoch === frame.epoch && frame.phaseIndex >= 5)));
+  const losses = plotted.map(f => f.forward.loss);
+  const allLosses = frames.filter(f => f.phase.key === "plotLoss").map(f => f.forward.loss);
+  const left = 44;
+  const right = chart.width - 18;
+  const top = 26;
+  const bottom = chart.height - 40;
+  cctx.strokeStyle = "#c7cdd7";
+  cctx.lineWidth = 1;
+  cctx.beginPath();
+  cctx.moveTo(left, top);
+  cctx.lineTo(left, bottom);
+  cctx.lineTo(right, bottom);
+  cctx.stroke();
+  cctx.fillStyle = "#5f6368";
+  cctx.font = "12px system-ui";
+  cctx.fillText("loss", 10, 18);
+  cctx.fillText("epoch", chart.width - 56, chart.height - 12);
+  for (let epoch = 1; epoch <= totalEpochs; epoch++) {
+    const x = left + (epoch - 1) / Math.max(1, totalEpochs - 1) * (right - left);
+    cctx.strokeStyle = "#eef1f5";
+    cctx.beginPath();
+    cctx.moveTo(x, top);
+    cctx.lineTo(x, bottom);
+    cctx.stroke();
+    cctx.fillStyle = "#5f6368";
+    cctx.fillText(String(epoch), x - 3, chart.height - 22);
+  }
+  if (losses.length === 0) return;
+  const maxLoss = Math.max(...allLosses) * 1.08;
+  const minLoss = Math.min(...allLosses) * .96;
+  cctx.strokeStyle = "#1a73e8";
+  cctx.lineWidth = 2.4;
+  cctx.beginPath();
+  losses.forEach((loss, i) => {
+    const x = left + i / Math.max(1, totalEpochs - 1) * (right - left);
+    const y = bottom - (loss - minLoss) / Math.max(1e-9, maxLoss - minLoss) * (bottom - top);
+    if (i === 0) cctx.moveTo(x, y); else cctx.lineTo(x, y);
+  });
+  cctx.stroke();
+  losses.forEach((loss, i) => {
+    const x = left + i / Math.max(1, totalEpochs - 1) * (right - left);
+    const y = bottom - (loss - minLoss) / Math.max(1e-9, maxLoss - minLoss) * (bottom - top);
+    cctx.beginPath();
+    cctx.fillStyle = i === losses.length - 1 ? "#d93025" : "#188038";
+    cctx.arc(x, y, i === losses.length - 1 ? 5 : 4, 0, Math.PI * 2);
+    cctx.fill();
+  });
+}
+function render() {
+  const frame = frames[index];
+  slider.value = index;
+  document.getElementById("epoch").textContent = `${frame.epoch} / ${totalEpochs}`;
+  document.getElementById("phaseName").textContent = displayPhase(frame.phase);
+  document.getElementById("lossValue").textContent = frame.phaseIndex >= 4 ? fmt(frame.forward.loss) : "-";
+  document.getElementById("predValue").textContent = frame.phaseIndex >= 3 ? fmtVector(frame.forward.pred) : "-";
+  document.getElementById("paramValue").textContent = frame.phaseIndex >= 6 ? fmt(frame.grad.gradNorm) : "-";
+  document.getElementById("detailText").innerHTML = frame.phase.desc;
+  drawNetwork(frame);
+  renderResults(frame);
+  renderPhases(frame);
+  renderGradients(frame);
+  if (window.MathJax?.typesetPromise) {
+    window.MathJax.typesetPromise([
+      svg,
+      document.getElementById("phaseList"),
+      document.getElementById("detailText"),
+      document.getElementById("gradientPanel"),
+    ]).catch(() => {});
+  }
+  drawLossChart(frame);
+}
+function stop() {
+  if (timer !== null) clearInterval(timer);
+  timer = null;
+  document.getElementById("play").textContent = "再生";
+}
+function move(delta) {
+  stop();
+  index = Math.max(0, Math.min(frames.length - 1, index + delta));
+  render();
+}
+document.getElementById("play").addEventListener("click", () => {
+  if (timer !== null) {
+    stop();
+    return;
+  }
+  document.getElementById("play").textContent = "停止";
+  timer = setInterval(() => {
+    index = (index + 1) % frames.length;
+    render();
+  }, 700);
+});
+document.getElementById("prev").addEventListener("click", () => move(-1));
+document.getElementById("next").addEventListener("click", () => move(1));
+slider.addEventListener("input", () => {
+  stop();
+  index = Number(slider.value);
+  render();
+});
+render();
+  </script>
+</body>
+</html>

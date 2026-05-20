@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activation Functions Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 14px;
+      color: #111827;
+      background: #ffffff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    label {
+      font-weight: 700;
+    }
+    select {
+      min-width: 220px;
+      padding: 7px 9px;
+      color: #111827;
+      background: #ffffff;
+      border: 1px solid #9ca3af;
+      border-radius: 4px;
+      font: inherit;
+    }
+    .viewer-layout {
+      display: grid;
+      grid-template-columns: minmax(420px, 1fr) minmax(260px, 340px);
+      gap: 14px;
+      align-items: start;
+      max-width: 1180px;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+    .formula-panel {
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 12px;
+      background: #f9fafb;
+    }
+    .formula-panel h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+    .formula-row {
+      margin-top: 10px;
+    }
+    .formula-row:first-of-type {
+      margin-top: 0;
+    }
+    .formula-label {
+      margin-bottom: 4px;
+      color: #4b5563;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .formula {
+      min-height: 46px;
+      margin: 0;
+      padding: 10px;
+      overflow-x: auto;
+      color: #111827;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .formula-note {
+      margin: 10px 0 0;
+      color: #4b5563;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .axis,
+    .grid {
+      stroke: #d1d5db;
+      stroke-width: 1;
+    }
+    .zero {
+      stroke: #374151;
+      stroke-width: 1.4;
+    }
+    .curve {
+      fill: none;
+      stroke: #2563eb;
+      stroke-width: 3;
+    }
+    .label {
+      fill: #111827;
+      font-size: 14px;
+    }
+    .title {
+      fill: #111827;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    @media (max-width: 760px) {
+      body {
+        padding: 10px;
+      }
+      .viewer-layout {
+        grid-template-columns: 1fr;
+      }
+      .controls {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+      }
+      select {
+        width: 100%;
+      }
+    }
+  </style>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]]
+      },
+      svg: {
+        fontCache: "global"
+      },
+      startup: {
+        typeset: false
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <div class="controls">
+    <label for="activation-select">活性化関数</label>
+    <select id="activation-select"></select>
+  </div>
+  <div class="viewer-layout">
+    <svg id="plot" viewBox="0 0 760 420" role="img" aria-labelledby="plot-title plot-desc">
+      <title id="plot-title">Activation function graph</title>
+      <desc id="plot-desc">Selected activation function plotted from x equals minus five to five.</desc>
+    </svg>
+    <aside class="formula-panel" aria-live="polite">
+      <h2 id="formula-title">Sigmoid</h2>
+      <div class="formula-row">
+        <div class="formula-label">forward</div>
+        <div id="forward-formula" class="formula"></div>
+      </div>
+      <div class="formula-row">
+        <div class="formula-label">backward</div>
+        <div id="backward-formula" class="formula"></div>
+      </div>
+      <p id="formula-note" class="formula-note"></p>
+    </aside>
+  </div>
+
+  <script>
+    function erf(x) {
+      const sign = Math.sign(x) || 1;
+      const z = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * z);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+      return sign * y;
+    }
+
+    const normalCdf = x => 0.5 * (1 + erf(x / Math.SQRT2));
+    const normalPdf = x => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+
+    const activationFunctions = [
+      {
+        name: "Sigmoid",
+        fn: x => 1 / (1 + Math.exp(-x)),
+        forward: String.raw`\[ y = \sigma(x) = \frac{1}{1 + e^{-x}} \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = y(1-y) \]`,
+      },
+      {
+        name: "Hard sigmoid",
+        fn: x => Math.max(0, Math.min(1, (x + 3) / 6)),
+        forward: String.raw`\[ y = \max\left(0, \min\left(1, \frac{x+3}{6}\right)\right) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+\frac{1}{6} & (-3 < x < 3)\\
+0 & (\text{otherwise})
+\end{cases} \]`,
+        note: "x = -3, 3 では実装上の勾配を使う。",
+      },
+      {
+        name: "Log sigmoid",
+        fn: x => -Math.log1p(Math.exp(-x)),
+        forward: String.raw`\[ y = \log\sigma(x) = -\log(1 + e^{-x}) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = \sigma(-x) = 1 - \sigma(x) \]`,
+      },
+      {
+        name: "Tanh",
+        fn: x => Math.tanh(x),
+        forward: String.raw`\[ y = \tanh(x) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = 1 - y^2 \]`,
+      },
+      {
+        name: "Hard tanh",
+        fn: x => Math.max(-1, Math.min(1, x)),
+        forward: String.raw`\[ y = \max(-1, \min(1, x)) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+1 & (-1 < x < 1)\\
+0 & (\text{otherwise})
+\end{cases} \]`,
+        note: "x = -1, 1 では実装上の勾配を使う。",
+      },
+      {
+        name: "ReLU",
+        fn: x => Math.max(0, x),
+        forward: String.raw`\[ y = \max(0, x) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+1 & (x > 0)\\
+0 & (x < 0)
+\end{cases} \]`,
+        note: "x = 0 では微分できないため，実装上の勾配を使う。",
+      },
+      {
+        name: "Leaky ReLU",
+        fn: x => x >= 0 ? x : 0.01 * x,
+        forward: String.raw`\[ y =
+\begin{cases}
+x & (x \ge 0)\\
+\alpha x & (x < 0)
+\end{cases},\quad \alpha = 0.01 \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+1 & (x > 0)\\
+\alpha & (x < 0)
+\end{cases} \]`,
+        note: "x = 0 では実装上の勾配を使う。",
+      },
+      {
+        name: "ReLU6",
+        fn: x => Math.max(0, Math.min(6, x)),
+        forward: String.raw`\[ y = \min(\max(0, x), 6) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+1 & (0 < x < 6)\\
+0 & (\text{otherwise})
+\end{cases} \]`,
+        note: "x = 0, 6 では実装上の勾配を使う。",
+      },
+      {
+        name: "ELU",
+        fn: x => x >= 0 ? x : Math.exp(x) - 1,
+        forward: String.raw`\[ y =
+\begin{cases}
+x & (x \ge 0)\\
+\alpha(e^x - 1) & (x < 0)
+\end{cases},\quad \alpha = 1 \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+1 & (x > 0)\\
+y + \alpha & (x < 0)
+\end{cases} \]`,
+      },
+      {
+        name: "SELU",
+        fn: x => 1.0507009873554805 * (x >= 0 ? x : 1.6732632423543772 * (Math.exp(x) - 1)),
+        forward: String.raw`\[ y =
+\begin{cases}
+\lambda x & (x \ge 0)\\
+\lambda\alpha(e^x - 1) & (x < 0)
+\end{cases} \]`,
+        backward: String.raw`\[ \frac{dy}{dx} =
+\begin{cases}
+\lambda & (x > 0)\\
+\lambda\left(\frac{y}{\lambda} + \alpha\right) & (x < 0)
+\end{cases} \]`,
+        note: String.raw`\(\lambda = 1.0507009873554805,\ \alpha = 1.6732632423543772\)`,
+      },
+      {
+        name: "GELU",
+        fn: x => x * normalCdf(x),
+        forward: String.raw`\[ y = x\Phi(x) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = \Phi(x) + x\phi(x) \]`,
+        note: String.raw`\(\Phi\) は標準正規分布の累積分布関数，\(\phi\) は確率密度関数。`,
+      },
+      {
+        name: "Swish / SiLU",
+        fn: x => x / (1 + Math.exp(-x)),
+        forward: String.raw`\[ y = x\sigma(x) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = \sigma(x) + x\sigma(x)(1-\sigma(x))
+= y + \sigma(x)(1-y) \]`,
+      },
+      {
+        name: "Mish",
+        fn: x => x * Math.tanh(Math.log1p(Math.exp(x))),
+        forward: String.raw`\[ y = x\tanh(\operatorname{softplus}(x)) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = \tanh(s) + x\sigma(x)(1-\tanh^2(s)) \]`,
+        note: String.raw`\(s = \operatorname{softplus}(x)\)。`,
+      },
+      {
+        name: "Softplus",
+        fn: x => Math.log1p(Math.exp(-Math.abs(x))) + Math.max(x, 0),
+        forward: String.raw`\[ y = \log(1 + e^x) \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = \sigma(x) \]`,
+      },
+      {
+        name: "Softsign",
+        fn: x => x / (1 + Math.abs(x)),
+        forward: String.raw`\[ y = \frac{x}{1 + |x|} \]`,
+        backward: String.raw`\[ \frac{dy}{dx} = \frac{1}{(1 + |x|)^2} \]`,
+      },
+    ];
+
+    const select = document.getElementById("activation-select");
+    const svg = document.getElementById("plot");
+    const formulaTitle = document.getElementById("formula-title");
+    const forwardFormula = document.getElementById("forward-formula");
+    const backwardFormula = document.getElementById("backward-formula");
+    const formulaNote = document.getElementById("formula-note");
+    const width = 760;
+    const height = 420;
+    const margin = { top: 54, right: 28, bottom: 48, left: 58 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const xMin = -5;
+    const xMax = 5;
+
+    for (const { name } of activationFunctions) {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    }
+
+    const sx = x => margin.left + ((x - xMin) / (xMax - xMin)) * plotWidth;
+
+    async function typesetFormulaPanel() {
+      if (!window.MathJax?.typesetPromise) return;
+      await window.MathJax.typesetPromise([forwardFormula, backwardFormula, formulaNote]);
+    }
+
+    function draw(name) {
+      const activation = activationFunctions.find(item => item.name === name);
+      const fn = activation.fn;
+      const points = Array.from({ length: 401 }, (_, i) => {
+        const x = xMin + (xMax - xMin) * i / 400;
+        return [x, fn(x)];
+      });
+      const rawY = points.map(([, y]) => y).filter(Number.isFinite);
+      let yMin = Math.min(...rawY, 0);
+      let yMax = Math.max(...rawY, 0);
+      const pad = Math.max((yMax - yMin) * 0.08, 0.2);
+      yMin -= pad;
+      yMax += pad;
+      const sy = y => margin.top + (1 - (y - yMin) / (yMax - yMin)) * plotHeight;
+      const path = points
+        .map(([x, y], i) => `${i === 0 ? "M" : "L"}${sx(x).toFixed(1)},${sy(y).toFixed(1)}`)
+        .join(" ");
+      const xTicks = [-5, -2.5, 0, 2.5, 5];
+      const yTicks = Array.from({ length: 5 }, (_, i) => yMin + (yMax - yMin) * i / 4);
+
+      svg.innerHTML = `
+        <title>${name} activation graph</title>
+        <desc>${name} plotted from x equals minus five to five.</desc>
+        <text x="${margin.left}" y="30" class="title">${name}</text>
+        ${xTicks.map(x => `<line x1="${sx(x)}" y1="${margin.top}" x2="${sx(x)}" y2="${height - margin.bottom}" class="grid"></line><text x="${sx(x)}" y="${height - 18}" text-anchor="middle" class="label">${x}</text>`).join("")}
+        ${yTicks.map(y => `<line x1="${margin.left}" y1="${sy(y)}" x2="${width - margin.right}" y2="${sy(y)}" class="grid"></line><text x="${margin.left - 10}" y="${sy(y) + 5}" text-anchor="end" class="label">${y.toFixed(1)}</text>`).join("")}
+        <line x1="${margin.left}" y1="${sy(0)}" x2="${width - margin.right}" y2="${sy(0)}" class="zero"></line>
+        <line x1="${sx(0)}" y1="${margin.top}" x2="${sx(0)}" y2="${height - margin.bottom}" class="zero"></line>
+        <rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" fill="none" class="axis"></rect>
+        <path d="${path}" class="curve"></path>
+        <text x="${width / 2}" y="${height - 6}" text-anchor="middle" class="label">x</text>
+        <text x="16" y="${height / 2}" transform="rotate(-90 16 ${height / 2})" text-anchor="middle" class="label">activation(x)</text>
+      `;
+      formulaTitle.textContent = name;
+      forwardFormula.innerHTML = activation.forward;
+      backwardFormula.innerHTML = activation.backward;
+      formulaNote.innerHTML = activation.note || "";
+      typesetFormulaPanel();
+    }
+
+    select.addEventListener("change", () => draw(select.value));
+    select.value = "Sigmoid";
+    draw(select.value);
+    window.addEventListener("load", typesetFormulaPanel);
+  </script>
+</body>
+</html>

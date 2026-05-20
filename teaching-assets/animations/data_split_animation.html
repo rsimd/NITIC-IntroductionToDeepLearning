@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Training Validation Test Split</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --yellow: #fbbc04;
+      --red: #d93025;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --soft-yellow: #fff7d6;
+      --soft-red: #fce8e6;
+      --dark: #3c4043;
+      --shadow: 0 14px 32px rgba(60, 64, 67, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+    .meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    main {
+      width: 1540px;
+      max-width: none;
+      margin: 0 auto;
+      padding: 10px 14px;
+    }
+    .diagram {
+      display: grid;
+      grid-template-columns: 1fr 34px 1fr 34px 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+      overflow: hidden;
+    }
+    .step-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcff;
+    }
+    h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+    .code {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .step-body {
+      position: relative;
+      display: grid;
+      gap: 16px;
+      padding: 12px;
+      min-height: 0;
+    }
+    .bar-wrap {
+      display: grid;
+      align-content: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .scale-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .bar {
+      display: flex;
+      width: 100%;
+      height: 72px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f1f3f4;
+    }
+    .rect {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      height: 100%;
+      border-right: 2px solid white;
+    }
+    .rect:last-child { border-right: 0; }
+    .rect.all,
+    .rect.training-wide {
+      background: linear-gradient(135deg, #dce9ff, var(--soft-blue));
+      color: #174ea6;
+    }
+    .rect.training {
+      background: linear-gradient(135deg, #dff2e4, var(--soft-green));
+      color: #0d652d;
+    }
+    .rect.validation {
+      background: linear-gradient(135deg, #fff1b8, var(--soft-yellow));
+      color: #7a4f00;
+    }
+    .rect.test {
+      background: linear-gradient(135deg, #fde2de, var(--soft-red));
+      color: #9f1c14;
+    }
+    .rect.hidden-test {
+      background: repeating-linear-gradient(135deg, var(--dark) 0 8px, #5f6368 8px 16px);
+      color: white;
+    }
+    .rect-text {
+      display: grid;
+      gap: 4px;
+      padding: 6px;
+      text-align: center;
+      line-height: 1.16;
+    }
+    .rect-text b {
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+    .rect-text span {
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .callouts {
+      position: relative;
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .bubble {
+      position: relative;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 9px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      line-height: 1.34;
+    }
+    .bubble::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -18px;
+      height: 18px;
+      border-left: 2px solid var(--line);
+    }
+    .bubble::after {
+      content: "";
+      position: absolute;
+      left: calc(50% - 4px);
+      top: -22px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--line);
+    }
+    .bubble b {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+    .bubble.training b { color: #0d652d; }
+    .bubble.validation b { color: #7a4f00; }
+    .bubble.test b { color: #9f1c14; }
+    .arrow {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .arrow span {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+    }
+    .arrow span::after {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-right: 5px;
+      vertical-align: -2px;
+    }
+    @media (max-width: 820px) {
+      .step-body {
+        grid-template-columns: 1fr;
+      }
+      .callouts {
+        display: grid;
+      }
+      .bubble {
+        width: 100% !important;
+      }
+      .bubble::before,
+      .bubble::after {
+        display: none;
+      }
+      .code {
+        white-space: normal;
+      }
+      .bar {
+        height: 110px;
+      }
+      .rect-text b {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>training data / validation data / test data の関係</h1>
+    <div class="meta">Iris 150件を，コード中の比率に従って training data 90件，validation data 30件，test data 30件に分ける</div>
+  </header>
+
+  <main>
+    <div class="diagram">
+      <section class="step">
+        <div class="step-head">
+          <h2>1. 全データを用意する</h2>
+          <span class="code">X, y: 150 samples</span>
+        </div>
+        <div class="step-body">
+          <div class="bar-wrap">
+            <div class="scale-label"><span>0</span><span>150 samples</span></div>
+            <div class="bar">
+              <div class="rect all" style="width:100%;">
+                <div class="rect-text"><b>all data</b><span>150件 / 100%</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="callouts">
+            <div class="bubble" style="width:100%;">
+              <b>分割前の全データ</b>
+              この時点では，まだ学習用・検証用・最終評価用の役割は決まっていない。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="arrow"><span aria-hidden="true"></span></div>
+
+      <section class="step">
+        <div class="step-head">
+          <h2>2. training data と test data に分割する</h2>
+          <span class="code">train_test_split(..., test_size=0.2)</span>
+        </div>
+        <div class="step-body">
+          <div class="bar-wrap">
+            <div class="scale-label"><span>training 80%</span><span>test 20%</span></div>
+            <div class="bar">
+              <div class="rect training-wide" style="width:80%;">
+                <div class="rect-text"><b>training data</b><span>120件 / 80%</span></div>
+              </div>
+              <div class="rect test" style="width:20%;">
+                <div class="rect-text"><b>test data</b><span>30件 / 20%</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="callouts">
+            <div class="bubble training" style="width:80%;">
+              <b>training data</b>
+              モデル作成のために使ってよいデータ。この中から validation data を作る。
+            </div>
+            <div class="bubble test" style="width:20%;">
+              <b>test data</b>
+              最終評価専用のデータ。実験（パラメータの学習）にこれを使うとカンニング（leakage）になるので，無いものとして扱おう。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="arrow"><span aria-hidden="true"></span></div>
+
+      <section class="step">
+        <div class="step-head">
+          <h2>3. training data から validation data を作る</h2>
+          <span class="code">train_test_split(training data, test_size=0.25)</span>
+        </div>
+        <div class="step-body">
+          <div class="bar-wrap">
+            <div class="scale-label"><span>training 60%</span><span>validation 20% / test 20%</span></div>
+            <div class="bar">
+              <div class="rect training" style="width:60%;">
+                <div class="rect-text"><b>training data</b><span>90件 / 60%</span></div>
+              </div>
+              <div class="rect validation" style="width:20%;">
+                <div class="rect-text"><b>validation data</b><span>30件 / 20%</span></div>
+              </div>
+              <div class="rect test" style="width:20%;">
+                <div class="rect-text"><b>test data</b><span>30件 / 20%</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="callouts">
+            <div class="bubble training" style="width:60%;">
+              <b>training data</b>
+              パラメータ更新に使う。`optimizer.step()` が直接見るデータ。
+            </div>
+            <div class="bubble validation" style="width:20%;">
+              <b>validation data</b>
+              擬似的な test data として，学習中の性能確認やハイパーパラメータ調整に使う。
+            </div>
+            <div class="bubble test" style="width:20%;">
+              <b>test data</b>
+              全ての実験が終わった後，最後に1回だけ最終評価に使う。
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--soft-green); border:1px solid #188038;"></i>training data</span>
+      <span><i class="swatch" style="background:var(--soft-yellow); border:1px solid #fbbc04;"></i>validation data</span>
+      <span><i class="swatch" style="background:var(--soft-red); border:1px solid #d93025;"></i>test data</span>
+      <span><i class="swatch" style="background:#5f6368; border:1px solid #3c4043;"></i>hidden test data</span>
+    </div>
+  </main>
+</body>
+</html>
