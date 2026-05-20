@@ -17,11 +17,12 @@ permissions:
 
 concurrency:
   group: github-pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -43,6 +44,7 @@ jobs:
       - name: Build static HTML
         env:
           BASE_URL: /NITIC-IntroductionToDeepLearning
+          HOST: 127.0.0.1
         run: uv run jupyter-book build --html --ci
 
       - name: Upload Pages artifact
