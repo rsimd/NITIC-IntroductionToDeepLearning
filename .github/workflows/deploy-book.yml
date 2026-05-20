@@ -41,6 +41,9 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Install theme dependencies
+        run: npm ci --prefix templates/nitic-wide-book-theme
+
       - name: Build static HTML
         env:
           BASE_URL: /NITIC-IntroductionToDeepLearning
