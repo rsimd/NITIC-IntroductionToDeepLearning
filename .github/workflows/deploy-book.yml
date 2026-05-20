@@ -45,7 +45,16 @@ jobs:
         env:
           BASE_URL: /NITIC-IntroductionToDeepLearning
           HOST: 127.0.0.1
-        run: uv run jupyter-book build --html --ci
+        run: |
+          set -euo pipefail
+          build_status=0
+          timeout --kill-after=10s 180s uv run jupyter-book build --html --ci || build_status=$?
+          if [ "$build_status" -ne 0 ] && [ "$build_status" -ne 124 ]; then
+            exit "$build_status"
+          fi
+          test -f _build/html/index.html
+          test -f _build/html/mlp/index.html
+          test -f _build/html/cnn/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
