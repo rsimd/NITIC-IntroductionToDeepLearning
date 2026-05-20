@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNN Color Convolution Animation</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --shadow: 0 14px 32px rgba(60, 64, 67, .13);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: 0; }
+    .meta { color: var(--muted); font-size: 13px; }
+    .controls {
+      display: grid;
+      grid-template-columns: auto auto auto minmax(120px, 220px);
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      min-height: 34px;
+      border: 1px solid #b8c8e8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    input[type="range"] { width: 100%; }
+    main {
+      display: grid;
+      gap: 14px;
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stat,
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+    }
+    .stat { padding: 9px 10px; }
+    .stat b { display: block; font-size: 20px; line-height: 1.1; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .small { color: var(--muted); font-size: 12px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px minmax(0, .58fr);
+      gap: 16px;
+      align-items: center;
+      padding: 18px;
+    }
+    .rgb-stack {
+      display: grid;
+      gap: 10px;
+    }
+    .channel {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+    .tag {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      color: white;
+      font-weight: 900;
+    }
+    .tag.r { background: #d93025; }
+    .tag.g { background: #188038; }
+    .tag.b { background: #1a73e8; }
+    .grid {
+      display: grid;
+      gap: 4px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+    .input-grid { grid-template-columns: repeat(4, 38px); }
+    .kernel-grid { grid-template-columns: repeat(2, 36px); justify-content: center; }
+    .output-grid { grid-template-columns: repeat(3, 58px); }
+    .cell {
+      display: grid;
+      place-items: center;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .input-grid .cell.r { background: #fce8e6; }
+    .input-grid .cell.g { background: #e6f4ea; }
+    .input-grid .cell.b { background: #e8f0fe; }
+    .cell.window {
+      border-color: #7baaf7;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, .18) inset;
+    }
+    .cell.active-out {
+      border-color: var(--green);
+      background: var(--soft-green);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .operator {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+    .operator b {
+      display: grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 24px;
+      box-shadow: var(--shadow);
+    }
+    .formula {
+      margin: 0 18px 18px;
+      border: 1px solid #7baaf7;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f3f8ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    @media (max-width: 920px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .controls { grid-template-columns: auto auto auto 1fr; width: 100%; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+      .input-grid { grid-template-columns: repeat(4, minmax(34px, 1fr)); width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>CNN: Color Convolution</h1>
+      <div class="meta">RGB画像では，各チャネルに対応するkernelを当て，チャネル方向にも合計して1枚のfeature mapを作る</div>
+    </div>
+    <div class="controls">
+      <button id="play">一時停止</button>
+      <button id="prev">戻る</button>
+      <button id="next">進む</button>
+      <input id="seek" type="range" min="0" max="8" value="0" step="1" aria-label="position">
+    </div>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat"><b id="position">row 0, col 0</b><span>kernel の位置</span></div>
+      <div class="stat"><b>4×4×3</b><span>RGB input</span></div>
+      <div class="stat"><b>2×2×3</b><span>1 filter</span></div>
+      <div class="stat"><b>3×3×1</b><span>output feature map</span></div>
+    </div>
+
+    <section>
+      <div class="panel-head">
+        <h2>色付き画像の畳み込み</h2>
+        <span class="small">spatial方向とchannel方向の両方で積和を取る</span>
+      </div>
+      <div class="workspace">
+        <div>
+          <h2>input image X</h2>
+          <div class="rgb-stack" id="inputStack"></div>
+        </div>
+        <div class="operator">
+          <h2>filter W</h2>
+          <div class="rgb-stack" id="kernelStack"></div>
+          <b>ΣRGB</b>
+          <span>R/G/Bそれぞれの畳み込み結果を足す</span>
+        </div>
+        <div>
+          <h2>feature map Y</h2>
+          <div class="grid output-grid" id="outputGrid"></div>
+        </div>
+      </div>
+      <div class="formula" id="formula"></div>
+    </section>
+  </main>
+
+  <script>
+const channels = ["r", "g", "b"];
+const labels = { r: "R", g: "G", b: "B" };
+const input = {
+  r: [
+    [3, 4, 5, 4],
+    [2, 5, 6, 3],
+    [1, 3, 5, 2],
+    [0, 2, 4, 1],
+  ],
+  g: [
+    [1, 2, 3, 2],
+    [2, 4, 4, 3],
+    [3, 5, 3, 2],
+    [2, 3, 2, 1],
+  ],
+  b: [
+    [0, 1, 2, 4],
+    [1, 1, 3, 5],
+    [2, 2, 4, 4],
+    [3, 1, 2, 3],
+  ],
+};
+const kernel = {
+  r: [[1, 0], [0, -1]],
+  g: [[0, 1], [-1, 0]],
+  b: [[1, -1], [0, 1]],
+};
+const positions = Array.from({ length: 9 }, (_, i) => [Math.floor(i / 3), i % 3]);
+let index = 0;
+let playing = true;
+let timer = null;
+
+function convAt(r, c) {
+  const parts = {};
+  let sum = 0;
+  channels.forEach(ch => {
+    let channelSum = 0;
+    for (let kr = 0; kr < 2; kr++) {
+      for (let kc = 0; kc < 2; kc++) {
+        channelSum += input[ch][r + kr][c + kc] * kernel[ch][kr][kc];
+      }
+    }
+    parts[ch] = channelSum;
+    sum += channelSum;
+  });
+  return { parts, sum };
+}
+
+function makeCell(value, className = "") {
+  const node = document.createElement("div");
+  node.className = `cell ${className}`.trim();
+  node.textContent = value;
+  return node;
+}
+
+function renderChannelGrid(root, ch, r, c) {
+  const active = new Set([`${r}-${c}`, `${r}-${c + 1}`, `${r + 1}-${c}`, `${r + 1}-${c + 1}`]);
+  const row = document.createElement("div");
+  row.className = "channel";
+  row.innerHTML = `<div class="tag ${ch}">${labels[ch]}</div>`;
+  const grid = document.createElement("div");
+  grid.className = "grid input-grid";
+  input[ch].forEach((values, rr) => {
+    values.forEach((value, cc) => grid.appendChild(makeCell(value, `${ch} ${active.has(`${rr}-${cc}`) ? "window" : ""}`)));
+  });
+  row.appendChild(grid);
+  root.appendChild(row);
+}
+
+function renderKernelGrid(root, ch) {
+  const row = document.createElement("div");
+  row.className = "channel";
+  row.innerHTML = `<div class="tag ${ch}">${labels[ch]}</div>`;
+  const grid = document.createElement("div");
+  grid.className = "grid kernel-grid";
+  kernel[ch].flat().forEach(value => grid.appendChild(makeCell(value)));
+  row.appendChild(grid);
+  root.appendChild(row);
+}
+
+function render() {
+  const [r, c] = positions[index];
+  const inputRoot = document.getElementById("inputStack");
+  inputRoot.innerHTML = "";
+  channels.forEach(ch => renderChannelGrid(inputRoot, ch, r, c));
+
+  const kernelRoot = document.getElementById("kernelStack");
+  kernelRoot.innerHTML = "";
+  channels.forEach(ch => renderKernelGrid(kernelRoot, ch));
+
+  const outputRoot = document.getElementById("outputGrid");
+  outputRoot.innerHTML = "";
+  const outputs = positions.map(([rr, cc]) => convAt(rr, cc).sum);
+  outputs.forEach((value, i) => outputRoot.appendChild(makeCell(value, i === index ? "active-out" : "")));
+
+  const calc = convAt(r, c);
+  document.getElementById("position").textContent = `row ${r}, col ${c}`;
+  document.getElementById("seek").value = String(index);
+  document.getElementById("formula").textContent =
+    `Y[${r}, ${c}] = conv(R) + conv(G) + conv(B) = ${calc.parts.r} + ${calc.parts.g} + ${calc.parts.b} = ${calc.sum}`;
+}
+
+function goNext() {
+  index = (index + 1) % positions.length;
+  render();
+}
+
+function goPrev() {
+  index = (index - 1 + positions.length) % positions.length;
+  render();
+}
+
+function schedule() {
+  clearInterval(timer);
+  if (playing) timer = setInterval(goNext, 1300);
+}
+
+document.getElementById("play").addEventListener("click", () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "一時停止" : "再生";
+  schedule();
+});
+document.getElementById("prev").addEventListener("click", () => { goPrev(); schedule(); });
+document.getElementById("next").addEventListener("click", () => { goNext(); schedule(); });
+document.getElementById("seek").addEventListener("input", event => {
+  index = Number(event.target.value);
+  render();
+  schedule();
+});
+
+render();
+schedule();
+  </script>
+</body>
+</html>

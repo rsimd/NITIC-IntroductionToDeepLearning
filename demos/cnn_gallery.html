@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNN Animation Gallery</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
+    .meta { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    main {
+      display: grid;
+      gap: 18px;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      overflow: hidden;
+    }
+    .head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcff;
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    a { color: #174ea6; font-size: 13px; font-weight: 650; }
+    iframe {
+      display: block;
+      width: 100%;
+      height: 760px;
+      border: 0;
+      background: white;
+    }
+    @media (max-width: 800px) {
+      iframe { height: 900px; }
+      .head { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CNN アニメーション一覧</h1>
+    <div class="meta">Convolution, Pooling, RGB版, Feature hierarchy をまとめて表示</div>
+  </header>
+  <main>
+    <section>
+      <div class="head">
+        <h2>1. CNNのConvolution</h2>
+        <a href="cnn_convolution_animation.html" target="_blank">単体で開く</a>
+      </div>
+      <iframe src="cnn_convolution_animation.html" title="CNN Convolution"></iframe>
+    </section>
+    <section>
+      <div class="head">
+        <h2>2. CNNのPooling</h2>
+        <a href="cnn_pooling_animation.html" target="_blank">単体で開く</a>
+      </div>
+      <iframe src="cnn_pooling_animation.html" title="CNN Pooling"></iframe>
+    </section>
+    <section>
+      <div class="head">
+        <h2>3. 色付き画像のConvolution</h2>
+        <a href="cnn_color_convolution_animation.html" target="_blank">単体で開く</a>
+      </div>
+      <iframe src="cnn_color_convolution_animation.html" title="CNN Color Convolution"></iframe>
+    </section>
+    <section>
+      <div class="head">
+        <h2>4. 色付き画像のPooling</h2>
+        <a href="cnn_color_pooling_animation.html" target="_blank">単体で開く</a>
+      </div>
+      <iframe src="cnn_color_pooling_animation.html" title="CNN Color Pooling"></iframe>
+    </section>
+    <section>
+      <div class="head">
+        <h2>5. Conv + Pooling を重ねた特徴抽象化</h2>
+        <a href="cnn_feature_hierarchy.html" target="_blank">単体で開く</a>
+      </div>
+      <iframe src="cnn_feature_hierarchy.html" title="CNN Feature Hierarchy"></iframe>
+    </section>
+  </main>
+</body>
+</html>

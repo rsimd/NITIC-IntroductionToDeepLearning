@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNN Feature Hierarchy</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --yellow: #fbbc04;
+      --red: #d93025;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --soft-yellow: #fff7d6;
+      --soft-red: #fce8e6;
+      --shadow: 0 14px 32px rgba(60, 64, 67, .13);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
+    .meta { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    main {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcff;
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .small { color: var(--muted); font-size: 12px; }
+    .pipeline {
+      display: grid;
+      grid-template-columns: 1.1fr 46px 1fr 46px .86fr 46px .78fr 46px .72fr;
+      gap: 0;
+      align-items: center;
+      padding: 18px;
+      overflow-x: auto;
+    }
+    .layer {
+      min-width: 154px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .layer-head {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .layer-body {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      padding: 12px;
+      min-height: 212px;
+    }
+    .shape {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+    .arrow::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      background: var(--muted);
+    }
+    .arrow::after {
+      content: "";
+      margin-left: -8px;
+      border-left: 9px solid var(--muted);
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+    }
+    .pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 17px);
+      gap: 3px;
+      padding: 7px;
+      border-radius: 8px;
+      background: #f1f3f4;
+    }
+    .px {
+      width: 17px;
+      height: 17px;
+      border-radius: 3px;
+      background: var(--c);
+    }
+    .feature-stack {
+      display: grid;
+      gap: 7px;
+      width: 100%;
+    }
+    .feature {
+      position: relative;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .feature::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--pattern);
+    }
+    .edges { --pattern: repeating-linear-gradient(90deg, transparent 0 12px, rgba(26,115,232,.7) 12px 15px); }
+    .corners { --pattern: radial-gradient(circle at 22% 35%, rgba(26,115,232,.75), transparent 14px), radial-gradient(circle at 72% 62%, rgba(24,128,56,.65), transparent 16px); }
+    .textures { --pattern: repeating-linear-gradient(45deg, rgba(251,188,4,.75) 0 7px, transparent 7px 14px); }
+    .parts { --pattern: radial-gradient(ellipse at 35% 40%, rgba(24,128,56,.78), transparent 28px), radial-gradient(ellipse at 68% 58%, rgba(26,115,232,.72), transparent 24px); }
+    .motifs { --pattern: linear-gradient(90deg, transparent 8%, rgba(217,48,37,.68) 8% 28%, transparent 28% 42%, rgba(24,128,56,.68) 42% 66%, transparent 66%); }
+    .objects { --pattern: radial-gradient(circle at 50% 48%, rgba(217,48,37,.72), transparent 42px), radial-gradient(circle at 35% 36%, rgba(251,188,4,.72), transparent 20px); }
+    .mini-map {
+      display: grid;
+      grid-template-columns: repeat(var(--n), 1fr);
+      gap: 4px;
+      width: var(--w);
+      padding: 7px;
+      border-radius: 8px;
+      background: #f1f3f4;
+    }
+    .mini {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: var(--soft-blue);
+      border: 1px solid #bdd2fb;
+    }
+    .mini.hot { background: var(--soft-green); border-color: #a8dab5; }
+    .caption {
+      min-height: 74px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      text-align: center;
+    }
+    .pulse {
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: translateY(0); filter: saturate(1); }
+      50% { transform: translateY(-2px); filter: saturate(1.4); }
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcff;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .note b { display: block; margin-bottom: 3px; }
+    @media (max-width: 900px) {
+      .pipeline {
+        grid-template-columns: 220px 44px 220px 44px 220px 44px 220px 44px 220px;
+      }
+      .summary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CNN: conv と pooling を重ねたときの特徴抽象化</h1>
+    <div class="meta">浅い層では局所的なエッジ，深い層では部品や全体構造に近い抽象的な特徴を扱う</div>
+  </header>
+
+  <main>
+    <section>
+      <div class="panel-head">
+        <h2>特徴の流れ</h2>
+        <span class="small">conv は特徴を検出し，pooling は位置とサイズを粗くまとめる</span>
+      </div>
+      <div class="pipeline">
+        <div class="layer">
+          <div class="layer-head">input image</div>
+          <div class="layer-body">
+            <div class="pixel-grid" id="pixels"></div>
+            <div class="shape">32×32×3</div>
+            <div class="caption">画素値そのもの。まだ意味のある特徴には分解されていない。</div>
+          </div>
+        </div>
+        <div class="arrow"></div>
+        <div class="layer">
+          <div class="layer-head">conv 1</div>
+          <div class="layer-body">
+            <div class="feature-stack">
+              <div class="feature edges pulse"></div>
+              <div class="feature corners"></div>
+              <div class="feature textures"></div>
+            </div>
+            <div class="shape">30×30×8</div>
+            <div class="caption">小さな3×3領域から，縦線・横線・角・色の変化のような局所特徴を検出する。</div>
+          </div>
+        </div>
+        <div class="arrow"></div>
+        <div class="layer">
+          <div class="layer-head">pool 1</div>
+          <div class="layer-body">
+            <div class="mini-map" style="--n:5;--w:130px;">
+              <div class="mini"></div><div class="mini hot"></div><div class="mini"></div><div class="mini"></div><div class="mini hot"></div>
+              <div class="mini"></div><div class="mini hot"></div><div class="mini"></div><div class="mini"></div><div class="mini"></div>
+              <div class="mini hot"></div><div class="mini"></div><div class="mini"></div><div class="mini hot"></div><div class="mini"></div>
+              <div class="mini"></div><div class="mini"></div><div class="mini hot"></div><div class="mini"></div><div class="mini"></div>
+              <div class="mini"></div><div class="mini hot"></div><div class="mini"></div><div class="mini"></div><div class="mini hot"></div>
+            </div>
+            <div class="shape">15×15×8</div>
+            <div class="caption">近い場所の反応をまとめ，少し位置がずれても同じ特徴として扱いやすくする。</div>
+          </div>
+        </div>
+        <div class="arrow"></div>
+        <div class="layer">
+          <div class="layer-head">conv 2</div>
+          <div class="layer-body">
+            <div class="feature-stack">
+              <div class="feature parts pulse"></div>
+              <div class="feature motifs"></div>
+              <div class="feature objects"></div>
+            </div>
+            <div class="shape">13×13×16</div>
+            <div class="caption">浅い特徴を組み合わせて，花びらの端・模様・部品のような広い特徴を作る。</div>
+          </div>
+        </div>
+        <div class="arrow"></div>
+        <div class="layer">
+          <div class="layer-head">pool 2 → classifier</div>
+          <div class="layer-body">
+            <div class="mini-map" style="--n:3;--w:112px;">
+              <div class="mini hot"></div><div class="mini"></div><div class="mini hot"></div>
+              <div class="mini"></div><div class="mini hot"></div><div class="mini"></div>
+              <div class="mini hot"></div><div class="mini"></div><div class="mini hot"></div>
+            </div>
+            <div class="shape">6×6×16 → class</div>
+            <div class="caption">空間サイズを小さくし，最後は全体構造からクラスを判断する。</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="note"><b>浅い層</b>画素に近い情報を使い，エッジや色の変化に反応する。</div>
+        <div class="note"><b>中間層</b>エッジを組み合わせ，局所的な形や模様を表す。</div>
+        <div class="note"><b>深い層</b>部品や全体配置に近い抽象的な特徴を表す。</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+const pixels = document.getElementById("pixels");
+const colors = ["#e8f0fe", "#d2e3fc", "#fce8e6", "#fef7e0", "#e6f4ea", "#ffffff"];
+for (let i = 0; i < 64; i++) {
+  const cell = document.createElement("div");
+  const distance = Math.abs((i % 8) - 4) + Math.abs(Math.floor(i / 8) - 4);
+  cell.className = "px";
+  cell.style.setProperty("--c", colors[Math.min(colors.length - 1, distance)]);
+  pixels.appendChild(cell);
+}
+  </script>
+</body>
+</html>
