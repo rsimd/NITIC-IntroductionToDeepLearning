@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNN Color Pooling Animation</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --shadow: 0 14px 32px rgba(60, 64, 67, .13);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: 0; }
+    .meta { color: var(--muted); font-size: 13px; }
+    .controls {
+      display: grid;
+      grid-template-columns: auto auto auto minmax(120px, 220px);
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      min-height: 34px;
+      border: 1px solid #b8c8e8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    input[type="range"] { width: 100%; }
+    main {
+      display: grid;
+      gap: 14px;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stat,
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+    }
+    .stat { padding: 9px 10px; }
+    .stat b { display: block; font-size: 20px; line-height: 1.1; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .small { color: var(--muted); font-size: 12px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px minmax(0, .72fr);
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+    }
+    .rgb-stack {
+      display: grid;
+      gap: 10px;
+    }
+    .channel {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+    .tag {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      color: white;
+      font-weight: 900;
+    }
+    .tag.r { background: #d93025; }
+    .tag.g { background: #188038; }
+    .tag.b { background: #1a73e8; }
+    .grid {
+      display: grid;
+      gap: 4px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+    .input-grid { grid-template-columns: repeat(4, 38px); }
+    .output-grid { grid-template-columns: repeat(2, 58px); }
+    .cell {
+      display: grid;
+      place-items: center;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .output-grid .cell { height: 48px; }
+    .input-grid .cell.r, .output-grid.r .cell { background: #fce8e6; }
+    .input-grid .cell.g, .output-grid.g .cell { background: #e6f4ea; }
+    .input-grid .cell.b, .output-grid.b .cell { background: #e8f0fe; }
+    .cell.window {
+      border-color: #7baaf7;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, .18) inset;
+    }
+    .cell.pick {
+      border-color: var(--green);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .operator {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+    .operator b {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 18px;
+      box-shadow: var(--shadow);
+    }
+    .method-options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+    .method-option {
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: white;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .method-option.active {
+      border-color: #7baaf7;
+      background: var(--soft-blue);
+      color: #174ea6;
+    }
+    .formula {
+      margin: 0 18px 18px;
+      border: 1px solid #7baaf7;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f3f8ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    @media (max-width: 900px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .controls { grid-template-columns: auto auto auto 1fr; width: 100%; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>CNN: Color Pooling</h1>
+      <div class="meta">RGB feature mapでも，poolingは各チャネルごとに独立に行う</div>
+    </div>
+    <div class="controls">
+      <button id="play">一時停止</button>
+      <button id="prev">戻る</button>
+      <button id="next">進む</button>
+      <input id="seek" type="range" min="0" max="3" value="0" step="1" aria-label="position">
+    </div>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat"><b id="position">row 0, col 0</b><span>pooling window</span></div>
+      <div class="stat"><b>4×4×3</b><span>RGB feature map</span></div>
+      <div class="stat"><b>2×2</b><span>window, stride = 2</span></div>
+      <div class="stat"><b>2×2×3</b><span>pooled feature map</span></div>
+    </div>
+
+    <section>
+      <div class="panel-head">
+        <h2 id="methodTitle">RGB Max pooling</h2>
+        <span class="small">チャネル数は変えず，空間サイズだけ小さくする</span>
+      </div>
+      <div class="workspace">
+        <div>
+          <h2>input feature map A</h2>
+          <div class="rgb-stack" id="inputStack"></div>
+        </div>
+        <div class="operator">
+          <span style="font-weight:800;color:var(--ink);">pooling method</span>
+          <div class="method-options" id="methodOptions"></div>
+          <b id="methodSymbol">max</b>
+          <span id="methodNote">各チャネルで最大値を取る</span>
+        </div>
+        <div>
+          <h2>pooled map P</h2>
+          <div class="rgb-stack" id="outputStack"></div>
+        </div>
+      </div>
+      <div class="formula" id="formula"></div>
+    </section>
+  </main>
+
+  <script>
+const channels = ["r", "g", "b"];
+const labels = { r: "R", g: "G", b: "B" };
+const input = {
+  r: [[1, 4, 2, 3], [3, 6, 1, 2], [2, 5, 4, 0], [1, 2, 3, 4]],
+  g: [[2, 1, 3, 5], [4, 3, 2, 6], [1, 4, 5, 3], [2, 1, 2, 4]],
+  b: [[0, 2, 5, 4], [1, 3, 4, 6], [2, 2, 3, 5], [4, 1, 2, 3]],
+};
+const positions = [[0, 0], [0, 2], [2, 0], [2, 2]];
+const methods = [
+  { key: "max", title: "RGB Max pooling", symbol: "max", note: "各チャネルで最大値を取る", fn: values => Math.max(...values), name: "max" },
+  { key: "average", title: "RGB Average pooling", symbol: "avg", note: "各チャネルで平均値を取る", fn: values => values.reduce((a, v) => a + v, 0) / values.length, name: "mean" },
+  { key: "min", title: "RGB Min pooling", symbol: "min", note: "各チャネルで最小値を取る", fn: values => Math.min(...values), name: "min" },
+];
+let index = 0;
+let methodIndex = 0;
+let playing = true;
+let timer = null;
+
+function valuesAt(ch, r, c) {
+  return [input[ch][r][c], input[ch][r][c + 1], input[ch][r + 1][c], input[ch][r + 1][c + 1]];
+}
+
+function formatValue(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function poolAt(ch, r, c) {
+  return methods[methodIndex].fn(valuesAt(ch, r, c));
+}
+
+function makeCell(value, className = "") {
+  const node = document.createElement("div");
+  node.className = `cell ${className}`.trim();
+  node.textContent = formatValue(value);
+  return node;
+}
+
+function renderInputChannel(root, ch, r, c) {
+  const active = new Set([`${r}-${c}`, `${r}-${c + 1}`, `${r + 1}-${c}`, `${r + 1}-${c + 1}`]);
+  const result = poolAt(ch, r, c);
+  const row = document.createElement("div");
+  row.className = "channel";
+  row.innerHTML = `<div class="tag ${ch}">${labels[ch]}</div>`;
+  const grid = document.createElement("div");
+  grid.className = "grid input-grid";
+  input[ch].forEach((values, rr) => {
+    values.forEach((value, cc) => {
+      const inWindow = active.has(`${rr}-${cc}`);
+      const pick = inWindow && value === result && methods[methodIndex].key !== "average";
+      grid.appendChild(makeCell(value, `${ch} ${pick ? "pick" : inWindow ? "window" : ""}`));
+    });
+  });
+  row.appendChild(grid);
+  root.appendChild(row);
+}
+
+function renderOutputChannel(root, ch) {
+  const row = document.createElement("div");
+  row.className = "channel";
+  row.innerHTML = `<div class="tag ${ch}">${labels[ch]}</div>`;
+  const grid = document.createElement("div");
+  grid.className = `grid output-grid ${ch}`;
+  positions.forEach(([r, c], i) => {
+    grid.appendChild(makeCell(poolAt(ch, r, c), i === index ? "pick" : ""));
+  });
+  row.appendChild(grid);
+  root.appendChild(row);
+}
+
+function renderMethodOptions() {
+  const root = document.getElementById("methodOptions");
+  if (root.children.length === 0) {
+    methods.forEach((method, i) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "method-option";
+      button.textContent = method.key;
+      button.addEventListener("click", () => {
+        methodIndex = i;
+        render();
+        schedule();
+      });
+      root.appendChild(button);
+    });
+  }
+  [...root.children].forEach((button, i) => button.classList.toggle("active", i === methodIndex));
+}
+
+function render() {
+  const [r, c] = positions[index];
+  const method = methods[methodIndex];
+  const inputRoot = document.getElementById("inputStack");
+  inputRoot.innerHTML = "";
+  channels.forEach(ch => renderInputChannel(inputRoot, ch, r, c));
+
+  const outputRoot = document.getElementById("outputStack");
+  outputRoot.innerHTML = "";
+  channels.forEach(ch => renderOutputChannel(outputRoot, ch));
+
+  renderMethodOptions();
+  document.getElementById("methodTitle").textContent = method.title;
+  document.getElementById("methodSymbol").textContent = method.symbol;
+  document.getElementById("methodNote").textContent = method.note;
+  document.getElementById("position").textContent = `row ${r}, col ${c}`;
+  document.getElementById("seek").value = String(index);
+  const parts = channels.map(ch => `${labels[ch]}:${formatValue(poolAt(ch, r, c))}`).join(", ");
+  document.getElementById("formula").textContent =
+    `P[:, ${r / 2}, ${c / 2}] = ${method.name}(A[:, ${r}:${r + 2}, ${c}:${c + 2}]) = ${parts}`;
+}
+
+function goNext() {
+  index = (index + 1) % positions.length;
+  render();
+}
+
+function goPrev() {
+  index = (index - 1 + positions.length) % positions.length;
+  render();
+}
+
+function schedule() {
+  clearInterval(timer);
+  if (playing) timer = setInterval(goNext, 1300);
+}
+
+document.getElementById("play").addEventListener("click", () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "一時停止" : "再生";
+  schedule();
+});
+document.getElementById("prev").addEventListener("click", () => { goPrev(); schedule(); });
+document.getElementById("next").addEventListener("click", () => { goNext(); schedule(); });
+document.getElementById("seek").addEventListener("input", event => {
+  index = Number(event.target.value);
+  render();
+  schedule();
+});
+
+render();
+schedule();
+  </script>
+</body>
+</html>

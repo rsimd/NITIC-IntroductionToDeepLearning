@@ -5,9 +5,26 @@ build/
 dist/
 wheels/
 *.egg-info
+.DS_Store
+!templates/nitic-wide-book-theme/build/
+!templates/nitic-wide-book-theme/build/**
+!templates/nitic-wide-book-theme/public/build/
+!templates/nitic-wide-book-theme/public/build/**
 
 # Virtual environments
 .venv
 
 # MyST build outputs
 _build
+_dumps
+
+# Local agent/browser state
+.playwright-mcp/
+.serena/
+
+# Node dependencies
+node_modules/
+node_modules
+
+# Notebook scratch files
+Untitled.ipynb

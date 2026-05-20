@@ -9,18 +9,13 @@ project:
     - machine learning
   github: https://github.com/rsimd/NITIC-IntroductionToDeepLearning
   toc:
-    - file: index.md
-    - file: 00_overview_machine_learning_and_deep_learning.md
-    - file: 01_introduction_deep_learning.md
-    - file: 02_neural_networks.md
-    - file: 03_convolutional_neural_networks.md
-    - file: 04_object_detection.md
-    - file: 05_robot_vision_inference.md
-    - file: 06_robot_control_node_red.md
-    - file: instructors.md
+    - file: book/index.md
+    - file: book/01_overview.md
+    - file: book/02_mlp.ipynb
+    - file: book/03_cnn.ipynb
 
 site:
-  template: book-theme
+  template: ./templates/nitic-wide-book-theme/template.yml
   options:
-    logo_text: DeepLearn
-    logo_url: https://github.com/rsimd/NITIC-IntroductionToDeepLearning
+    logo_text: "NITIC: Introduction to Deep Learning"
+    logo_url: /
