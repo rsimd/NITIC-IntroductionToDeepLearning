@@ -247,6 +247,32 @@
     max-width: 100% !important;
   }
 
+  article.article div:has(> iframe[title="Activation Functions Viewer"]) {
+    height: 560px !important;
+    padding-bottom: 0 !important;
+  }
+
+  article.article div:has(> iframe[title="Forward and loss animation"]),
+  article.article div:has(> iframe[title="Backward propagation animation"]),
+  article.article div:has(> iframe[title="Forward backward training animation"]) {
+    height: 900px !important;
+    padding-bottom: 0 !important;
+  }
+
+  article.article div:has(> iframe[title="Training validation test split animation"]) {
+    height: 1200px !important;
+    padding-bottom: 0 !important;
+  }
+
+  article.article div:has(> iframe[title="Iris mini-batch animation"]) {
+    height: 820px !important;
+    padding-bottom: 0 !important;
+  }
+
+  article.article div:has(> iframe[title]) > iframe {
+    height: 100% !important;
+  }
+
   .myst-fm-colab-link {
     color: #f29900 !important;
     text-decoration: none !important;
