@@ -1,0 +1,43 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="fully_connected_layer_calculation" id="fully-connected-layer-calculation">
+    <mxGraphModel dx="1100" dy="650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="920" pageHeight="520" math="1" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="全結合層（Linear レイヤ）の計算：shape を辺の長さで見る" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="820" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="formula" value="$$ y = W \cdot x + b $$" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="330" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="y" value="出力 y&lt;br&gt;shape: (3, 1)&lt;br&gt;3クラスのスコア" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="70" y="180" width="45" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="eq" value="=" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="145" y="220" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="w" value="重み W&lt;br&gt;shape: (3, 4)&lt;br&gt;3個の出力 × 4個の入力" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="210" y="180" width="160" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="dot" value="$$\cdot$$" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="390" y="220" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="x" value="入力 x&lt;br&gt;shape: (4, 1)&lt;br&gt;4個の特徴量" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="450" y="160" width="45" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="plus" value="+" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="525" y="220" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="b" value="バイアス b&lt;br&gt;shape: (3, 1)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="180" width="45" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="note1" value="同じ shape 成分は，同じ長さの辺で表している。W の高さ，y の高さ，b の高さはいずれも 3 に対応する。W の幅と x の高さはいずれも 4 に対応する。" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;align=left;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="350" width="700" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="note2" value="PyTorch の nn.Linear では，重みは shape (out_features, in_features) で保持される。&lt;br&gt;ミニバッチ入力 X の shape が (N, 4) のとき，実装上は  Y = X @ W.T + b  と計算される。" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;align=left;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="430" width="700" height="65" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

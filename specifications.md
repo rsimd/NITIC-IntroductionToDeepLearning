@@ -26,7 +26,7 @@ Deploys `_build/html` to GitHub Pages with `BASE_URL=/NITIC-IntroductionToDeepLe
 
 ## Hands-on lab (course materials)
 
-The book is written so readers can follow it **without attending a specific class**. Classroom logistics (shared hardware, rotation) are isolated in optional sections of the robot chapters and in [instructors.md](instructors.md).
+The book is written so readers can follow it **without attending a specific class**.
 
 - **Training / experiments:** [Google Colab](https://colab.research.google/) for model training and quick checks; students export `.py` and trained weights (e.g. `.pt`, `.onnx`) as documented per chapter.
 - **PC track:** Janken (rock-paper-scissors) classification and related exercises run on the student’s own computer (local Python or Colab export).
@@ -50,8 +50,8 @@ Export path (conceptual): Colab trains → export **ONNX** (or TorchScript) + th
 | Path | Role |
 |------|------|
 | `myst.yml` | Project title, TOC, theme, GitHub URL |
-| `index.md` | Landing page |
-| `00_*.md` … `06_*.md` | Numbered chapters (see `project.toc`) |
-| `instructors.md` | Syllabus ↔ chapter mapping (staff; optional in class) |
-| `*.ipynb` | Optional notebooks (add to `project.toc` if used) |
+| `book/index.md` | Landing page |
+| `book/01_overview.md` | Overview chapter |
+| `book/02_mlp.ipynb` | MLP chapter |
+| `book/03_cnn.ipynb` | CNN chapter |
 | `_build/` | Build output (gitignored) |

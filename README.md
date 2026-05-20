@@ -1,9 +1,3 @@
-> This project was created by the AI code editor “Cursor”.
-> The large language model (LLM) used by Cursor follows the model selected in the editor.
-> Site configuration is documented in [myst.yml](myst.yml).
-> Reproducibility notes are in [specifications.md](specifications.md).
-> Syllabus ↔ chapter mapping (staff): [instructors.md](instructors.md).
-
 # NITIC: Introduction to Deep Learning（Jupyter Book / MyST）
 
 [Jupyter Book](https://jupyterbook.org/)（[MyST](https://mystmd.org/)）でビルドする Markdown ドキュメントです。
@@ -31,6 +25,46 @@ BASE_URL=/NITIC-IntroductionToDeepLearning uv run jupyter-book build --html --ci
 ```
 
 生成物は `_build/html/` に出力されます。
+
+## PyTorch Playground 風の学習可視化
+
+`nitic_playground` には、`torch.nn.Sequential` で作った小さな MLP の学習過程を Jupyter Lab / Colab 上で再生するための HTML 生成器があります。訓練そのものは PyTorch 側で行い、HTML は記録済みの重み・損失・決定境界または回帰曲線を表示するだけです。
+
+```python
+import numpy as np
+import torch
+from torch import nn
+from IPython.display import HTML
+
+from nitic_playground import create_playground_recorder
+
+model = nn.Sequential(
+    nn.Linear(2, 8),
+    nn.Tanh(),
+    nn.Linear(8, 1),
+)
+
+X = np.random.randn(200, 2).astype("float32")
+y = (X[:, 0] * X[:, 1] > 0).astype("float32")
+
+optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
+criterion = nn.BCEWithLogitsLoss()
+recorder = create_playground_recorder(model, X, y, problem="classification")
+
+for epoch in range(100):
+    optimizer.zero_grad()
+    logits = model(torch.tensor(X))
+    loss = criterion(logits[:, 0], torch.tensor(y))
+    loss.backward()
+    optimizer.step()
+
+    if epoch % 5 == 0:
+        recorder.capture(step=epoch, loss=float(loss.item()))
+
+HTML(recorder.to_html())
+```
+
+`recorder.to_html()` は VS Code Notebook / Jupyter Lab / Colab で初回表示から JavaScript が動くように、`iframe srcdoc` 形式の HTML を返します。`recorder.to_html("playground.html")` のようにパスを渡すと、単体で開ける HTML ファイルも同時に保存します。対応している構造は `nn.Linear` と `nn.ReLU`、`nn.Tanh`、`nn.Sigmoid`、`nn.Identity` の組み合わせです。可視化対象は、2次元入力の分類・回帰、または1次元入力の回帰です。
 
 ## GitHub Pages で公開する
 
