@@ -5,16 +5,22 @@ description = "Jupyter Book (MyST) materials for NITIC deep learning course"
 readme = "README.md"
 requires-python = ">=3.12.2"
 dependencies = [
+    "accelerate>=1.13.0",
+    "jaxtyping>=0.3.9",
     "matplotlib>=3.10.8",
     "matplotlib-fontja>=1.1.0",
     "numpy>=2.4.4",
     "pandas>=3.0.2",
+    "pillow>=12.2.0",
     "plotly>=6.0.0",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "seaborn>=0.13.2",
     "tabulate>=0.10.0",
+    "timm>=1.0.27",
     "torch>=2.11.0",
+    "torchvision>=0.26.0",
+    "transformers>=5.8.1",
 ]
 
 [dependency-groups]
