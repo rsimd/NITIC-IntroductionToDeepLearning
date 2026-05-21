@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="430" viewBox="0 0 1120 430" role="img" aria-labelledby="title desc">
+  <title id="title">MobileNetV3 architecture diagram</title>
+  <desc id="desc">A simplified MobileNetV3 transfer learning architecture for CIFAR-100.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94a3b8" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="1120" height="430" fill="#f8fafc"/>
+  <text x="40" y="42" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#0f172a">ImageNet pretrained MobileNetV3 による転移学習</text>
+  <text x="40" y="72" font-family="Arial, sans-serif" font-size="15" fill="#475569">ImageNet で学習済みの特徴抽出器を利用し，CIFAR-100 用の分類層へ付け替える。</text>
+
+  <g font-family="Arial, sans-serif" font-size="14" text-anchor="middle">
+    <g filter="url(#shadow)">
+      <rect x="38" y="128" width="132" height="96" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+      <text x="104" y="158" font-weight="700" fill="#1e3a8a">入力画像</text>
+      <text x="104" y="184" fill="#1e40af">3 × 224 × 224</text>
+      <text x="104" y="205" fill="#1e40af">ImageNet 正規化</text>
+    </g>
+    <line x1="182" y1="176" x2="226" y2="176" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="240" y="112" width="156" height="128" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="318" y="142" font-weight="700" fill="#14532d">Stem</text>
+      <text x="318" y="168" fill="#166534">Conv + BN</text>
+      <text x="318" y="190" fill="#166534">h-swish</text>
+      <text x="318" y="212" fill="#166534">最初の特徴抽出</text>
+    </g>
+    <line x1="408" y1="176" x2="452" y2="176" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="466" y="98" width="210" height="156" rx="8" fill="#fef3c7" stroke="#d97706"/>
+      <text x="571" y="130" font-weight="700" fill="#78350f">Inverted Residual Blocks</text>
+      <text x="571" y="158" fill="#92400e">1×1 expand</text>
+      <text x="571" y="180" fill="#92400e">Depthwise 3×3 / 5×5</text>
+      <text x="571" y="202" fill="#92400e">Squeeze-and-Excitation</text>
+      <text x="571" y="224" fill="#92400e">1×1 project</text>
+    </g>
+    <line x1="688" y1="176" x2="732" y2="176" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="746" y="112" width="156" height="128" rx="8" fill="#e0f2fe" stroke="#0284c7"/>
+      <text x="824" y="142" font-weight="700" fill="#075985">Pooling</text>
+      <text x="824" y="168" fill="#0369a1">Global Average</text>
+      <text x="824" y="190" fill="#0369a1">Dropout</text>
+      <text x="824" y="212" fill="#0369a1">特徴ベクトル</text>
+    </g>
+    <line x1="914" y1="176" x2="958" y2="176" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="972" y="128" width="116" height="96" rx="8" fill="#fae8ff" stroke="#9333ea"/>
+      <text x="1030" y="158" font-weight="700" fill="#581c87">新しい分類器</text>
+      <text x="1030" y="184" fill="#6b21a8">Linear</text>
+      <text x="1030" y="205" fill="#6b21a8">100 logits</text>
+    </g>
+  </g>
+
+  <g font-family="Arial, sans-serif" font-size="14">
+    <rect x="70" y="300" width="300" height="72" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="90" y="328" font-weight="700" fill="#0f172a">段階1: 特徴抽出</text>
+    <text x="90" y="354" fill="#475569">features を固定し，classifier だけを学習する。</text>
+
+    <rect x="410" y="300" width="300" height="72" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="430" y="328" font-weight="700" fill="#0f172a">段階2: ファインチューニング</text>
+    <text x="430" y="354" fill="#475569">全パラメータを小さい学習率で追加学習する。</text>
+
+    <rect x="750" y="300" width="300" height="72" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="770" y="328" font-weight="700" fill="#0f172a">ねらい</text>
+    <text x="770" y="354" fill="#475569">ImageNet の汎用特徴を CIFAR-100 に適応する。</text>
+  </g>
+</svg>
