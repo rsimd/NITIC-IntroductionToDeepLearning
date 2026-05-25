@@ -26,7 +26,7 @@ project:
     - file: book/IWAE.ipynb
     - file: book/slides/index.md
       children:
-        - file: book/slides/tf_trainer.md
+        - file: book/slides/hf_trainer.md
     - file: book/demos/index.md
       children:
         - file: book/demos/activation-functions.md
