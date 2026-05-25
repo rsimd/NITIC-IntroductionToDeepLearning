@@ -35,4 +35,63 @@ if (window.requestIdleCallback) {
 } else {
   window.setTimeout(hydrate, 1);
 }
+
+(() => {
+  const activeLinkClass = "myst-outline-hash-active";
+  const activeItemClass = "myst-outline-hash-active-item";
+
+  function updateOutlineHashActive() {
+    document.querySelectorAll(`.${activeLinkClass}`).forEach((node) => node.classList.remove(activeLinkClass));
+    document.querySelectorAll(`.${activeItemClass}`).forEach((node) => node.classList.remove(activeItemClass));
+
+    const hash = decodeURIComponent(window.location.hash || "");
+    if (!hash || hash === "#") return;
+
+    const id = hash.slice(1);
+    const target = document.getElementById(id);
+    const outline = document.querySelector(".myst-outline-list");
+    if (!target || !outline) return;
+
+    const rect = target.getBoundingClientRect();
+    const upperActiveLimit = Math.max(160, window.innerHeight * 0.25);
+    if (rect.top < -80 || rect.top > upperActiveLimit) return;
+
+    const safeId = id.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const link = outline.querySelector(`a[href="#${safeId}"]`);
+    if (!link) return;
+
+    link.classList.add(activeLinkClass);
+    link.closest(".myst-outline-item")?.classList.add(activeItemClass);
+  }
+
+  function scheduleOutlineHashActive() {
+    cancelAnimationFrame(window.__niticOutlineHashRaf || 0);
+    window.__niticOutlineHashRaf = requestAnimationFrame(updateOutlineHashActive);
+  }
+
+  window.addEventListener("hashchange", scheduleOutlineHashActive);
+  window.addEventListener("scroll", scheduleOutlineHashActive, { passive: true });
+  window.addEventListener("resize", scheduleOutlineHashActive);
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (event.target.closest?.('.myst-outline-list a[href^="#"]')) {
+        setTimeout(scheduleOutlineHashActive, 0);
+      }
+    },
+    true,
+  );
+  new MutationObserver(scheduleOutlineHashActive).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleOutlineHashActive, { once: true });
+  } else {
+    scheduleOutlineHashActive();
+  }
+  setTimeout(scheduleOutlineHashActive, 100);
+  setTimeout(scheduleOutlineHashActive, 500);
+})();
 //# sourceMappingURL=/myst_assets_folder/entry.client-JKLJPDHR.js.map

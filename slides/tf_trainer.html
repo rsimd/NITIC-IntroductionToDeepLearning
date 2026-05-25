@@ -39,6 +39,8 @@
   code,.mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
   .mono{background:#eef3f8;border:1px solid #d9e3ef;border-radius:5px;padding:1px 5px;color:#0f2f57;font-size:.94em}.dark .mono{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.16);color:#eef6ff}
   pre{margin:0;background:#111827;color:#eaf2ff;border-radius:8px;padding:18px 20px;font-size:17px;line-height:1.42;white-space:pre-wrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09),0 12px 28px rgba(15,23,42,.12);}
+  pre.python-highlighted{color:#e5e7eb}
+  .py-comment{color:#94a3b8;font-style:italic}.py-string{color:#fbbf24}.py-keyword{color:#93c5fd;font-weight:800}.py-builtin{color:#67e8f9}.py-constant{color:#fca5a5;font-weight:750}.py-number{color:#c4b5fd}.py-function{color:#86efac}.py-operator{color:#fda4af}
   pre.small{font-size:15.5px;line-height:1.36}.code-title{font-weight:900;margin-bottom:9px;color:#1d3f6f;font-size:20px}.dark .code-title{color:#dceaff}
   .tag{display:inline-flex;align-items:center;gap:8px;background:#123b67;color:white;border-radius:7px;padding:5px 11px;font-weight:900;font-size:18px;margin-bottom:10px}
   .num{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:8px;background:var(--blue);color:white;font-size:24px;font-weight:900;margin-right:12px;vertical-align:middle;box-shadow:0 7px 18px rgba(37,99,235,.23);}
@@ -330,6 +332,94 @@ def compute_iris_metrics(eval_pred: EvalPrediction) -> dict[str, float]:
 </nav>
 <script>
 (() => {
+  const escapeHtml = (value) => value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+
+  const keywords = new Set([
+    "and", "as", "assert", "break", "class", "continue", "def", "elif", "else",
+    "except", "finally", "for", "from", "if", "import", "in", "is", "lambda",
+    "not", "or", "pass", "raise", "return", "super", "try", "while", "with", "yield",
+  ]);
+  const builtins = new Set([
+    "dict", "float", "int", "len", "list", "print", "range", "str", "tuple",
+    "np", "torch", "nn", "Dataset", "Trainer", "TrainingArguments", "EvalPrediction",
+    "IrisDataset", "ClassifierForTrainer",
+  ]);
+  const constants = new Set(["False", "None", "True"]);
+
+  const highlightPython = (source) => {
+    let html = "";
+    let index = 0;
+    while (index < source.length) {
+      const rest = source.slice(index);
+
+      if (source[index] === "#") {
+        const end = source.indexOf("\n", index);
+        const stop = end === -1 ? source.length : end;
+        html += `<span class="py-comment">${escapeHtml(source.slice(index, stop))}</span>`;
+        index = stop;
+        continue;
+      }
+
+      const stringMatch = rest.match(/^([rubfRUBF]{0,3})("""|'''|"|')/);
+      if (stringMatch) {
+        const prefix = stringMatch[1];
+        const quote = stringMatch[2];
+        let end = index + prefix.length + quote.length;
+        while (end < source.length) {
+          if (quote.length === 1 && source[end] === "\\") {
+            end += 2;
+            continue;
+          }
+          if (source.startsWith(quote, end)) {
+            end += quote.length;
+            break;
+          }
+          end += 1;
+        }
+        html += `<span class="py-string">${escapeHtml(source.slice(index, end))}</span>`;
+        index = end;
+        continue;
+      }
+
+      const numberMatch = rest.match(/^\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i);
+      if (numberMatch) {
+        html += `<span class="py-number">${numberMatch[0]}</span>`;
+        index += numberMatch[0].length;
+        continue;
+      }
+
+      const identifierMatch = rest.match(/^[A-Za-z_][A-Za-z0-9_]*/);
+      if (identifierMatch) {
+        const token = identifierMatch[0];
+        const after = source.slice(index + token.length).match(/^\s*(.)/);
+        let className = "";
+        if (keywords.has(token)) className = "py-keyword";
+        else if (constants.has(token)) className = "py-constant";
+        else if (builtins.has(token)) className = "py-builtin";
+        else if (after?.[1] === "(") className = "py-function";
+        html += className ? `<span class="${className}">${token}</span>` : token;
+        index += token.length;
+        continue;
+      }
+
+      if (/^[=+\-*/%<>!|&:.,()[\]{}]/.test(source[index])) {
+        html += `<span class="py-operator">${escapeHtml(source[index])}</span>`;
+      } else {
+        html += escapeHtml(source[index]);
+      }
+      index += 1;
+    }
+    return html;
+  };
+
+  document.querySelectorAll("pre").forEach((pre) => {
+    pre.innerHTML = highlightPython(pre.textContent);
+    pre.classList.add("python-highlighted");
+  });
+
   const slides = Array.from(document.querySelectorAll(".slide"));
   const prevButton = document.querySelector("#prev-slide");
   const nextButton = document.querySelector("#next-slide");

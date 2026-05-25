@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transformer: Self-Attentionで系列を読む 難所スライド</title>
+  <style>
+    :root { --ink:#172033; --muted:#586575; --line:#d8dee8; --panel:#fff; --accent:#2563eb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 18px; background: #f7f9fc; color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .deck { max-width: 1120px; margin: 0 auto; min-height: 620px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; box-shadow: 0 14px 32px rgba(15,23,42,.08); }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    h1 { margin: 0; font-size: 1.05rem; }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    button { border: 1px solid #b9c4d5; background: #fff; border-radius: 8px; padding: 7px 12px; font-weight: 800; cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    .count { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .slide { padding: 30px clamp(18px, 4vw, 52px); }
+    .slide h2 { margin: 0 0 18px; font-size: clamp(1.45rem, 2.6vw, 2.35rem); letter-spacing: 0; }
+    .formula { margin: 0 0 18px; padding: 16px; border: 1px solid #c7d2fe; border-radius: 8px; background: #eef4ff; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1rem; line-height: 1.6; white-space: pre-wrap; }
+    .body { color: var(--muted); font-size: 1.08rem; line-height: 1.8; }
+    .check { margin-top: 20px; padding: 13px 16px; border-left: 4px solid var(--accent); background: #f8fafc; line-height: 1.7; }
+    @media (max-width: 720px) { header { align-items: flex-start; flex-direction: column; } .slide { padding: 22px 16px; } }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <header>
+      <h1>Transformer: Self-Attentionで系列を読む 難所スライド</h1>
+      <div class="controls">
+        <button id="prev">戻る</button>
+        <button id="next">進む</button>
+        <span id="count" class="count"></span>
+      </div>
+    </header>
+    <section id="slide" class="slide"></section>
+  </main>
+  <script>
+    const slides = [{"title": "MLPから何が増えたか", "formula": "MLPでは`xW+b`で1つのベクトルを変換した。Transformerでは入力が$X\\in\\mathbb{R}^{T\\times d}$になり、`QK^T`で`T x T`の参照表を作る。つまり、系列内のどの位置を見るかをデータから決める。", "body": "入力、shape、lossのどれがMLPから変わったかを最初に固定する。"}, {"title": "Q/K/VとAttention", "formula": "\\mathrm{Attention}(Q,K,V)=\\mathrm{softmax}\\left(\\frac{QK^\\top}{\\sqrt{d_k}}\\right)V", "body": "Qは探したい情報、Kは照合用の見出し、Vは取り出す内容である。すべて同じ入力Xから別々の線形変換で作られる。"}, {"title": "Multi-Head Attention", "formula": "\\mathrm{head}_i=\\mathrm{Attention}(XW_i^Q,XW_i^K,XW_i^V)", "body": "複数headは、同じ系列を異なる部分空間から見る仕組みである。"}, {"title": "位置情報と残差接続", "formula": "x \\leftarrow \\mathrm{LayerNorm}(x+\\mathrm{MHA}(x))", "body": "Attentionだけでは順序を区別しにくい。位置情報と残差接続が、系列の順序と深い学習を支える。"}, {"title": "Trainerで見る場所", "formula": "Dataset keys -> model.forward(...) -> {'loss', 'logits'}", "body": "Trainerは学習ループを隠すが、lossが何を近似しているかは隠さない。"}];
+    let index = 0;
+    const slide = document.getElementById("slide");
+    const count = document.getElementById("count");
+    function render() {
+      const item = slides[index];
+      slide.innerHTML = `<h2>${item.title}</h2><pre class="formula">${item.formula}</pre><div class="body">${item.body}</div><div class="check">確認: この式の入力shape、出力shape、Trainerのlossへの接続を1文で説明する。</div>`;
+      count.textContent = `${index + 1} / ${slides.length}`;
+    }
+    document.getElementById("prev").addEventListener("click", () => { index = Math.max(0, index - 1); render(); });
+    document.getElementById("next").addEventListener("click", () => { index = Math.min(slides.length - 1, index + 1); render(); });
+    render();
+  </script>
+</body>
+</html>

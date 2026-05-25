@@ -13,6 +13,20 @@ project:
     - file: book/01_overview.md
     - file: book/02_mlp.ipynb
     - file: book/03_cnn.ipynb
+    - file: "book/Object Detection.ipynb"
+    - file: book/transformer.ipynb
+    - file: book/llm.ipynb
+    - file: book/diffusion_model.ipynb
+    - file: book/DDPM.ipynb
+    - file: book/gan.ipynb
+    - file: book/vae.ipynb
+    - file: book/restricted_boltzmann_machine.ipynb
+    - file: book/deep_boltzmann_machine.ipynb
+    - file: book/flow.ipynb
+    - file: book/IWAE.ipynb
+    - file: book/slides/index.md
+      children:
+        - file: book/slides/tf_trainer.md
     - file: book/demos/index.md
       children:
         - file: book/demos/activation-functions.md

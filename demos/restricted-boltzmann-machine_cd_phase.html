@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>positive negative phase animation</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --line: #d8dee8;
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --blue: #2563eb;
+      --green: #059669;
+      --red: #dc2626;
+      --amber: #d97706;
+      --violet: #7c3aed;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 18px;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .demo {
+      max-width: 1180px;
+      margin: 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, .08);
+    }
+    header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.18rem;
+      letter-spacing: 0;
+    }
+    .purpose, .target {
+      margin: 4px 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: .94rem;
+    }
+    .target strong { color: var(--ink); }
+    .controls {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #f9fbff;
+    }
+    button {
+      border: 1px solid #b9c4d5;
+      background: #fff;
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--blue); }
+    input[type="range"] { width: 100%; }
+    .counter {
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .formula {
+      margin: 0;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #eef4ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: nowrap;
+      overflow-x: auto;
+      font-size: .92rem;
+    }
+    .visual {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 16px 18px;
+      min-height: 300px;
+    }
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 250px;
+      background: #fff;
+    }
+    .lane-title {
+      color: var(--muted);
+      font-size: .86rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .block {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 8px 0;
+      background: #fbfdff;
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+    .block.active {
+      transform: translateY(-2px);
+      border-color: var(--blue);
+      background: #eff6ff;
+    }
+    .block[data-kind="result"].active { border-color: var(--green); background: #ecfdf5; }
+    .block[data-kind="warn"].active { border-color: var(--amber); background: #fff7ed; }
+    .label {
+      font-weight: 800;
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+    .shape {
+      display: inline-block;
+      margin-bottom: 6px;
+      color: #fff;
+      background: #334155;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: .78rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .value {
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .grid {
+      display: grid;
+      gap: 3px;
+      margin-top: 7px;
+    }
+    .cell {
+      min-height: 22px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      display: grid;
+      place-items: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+    }
+    .cell.hot { background: #dbeafe; border-color: #60a5fa; }
+    .cell.good { background: #dcfce7; border-color: #4ade80; }
+    .cell.bad { background: #fee2e2; border-color: #f87171; }
+    .explain {
+      padding: 13px 18px 16px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      line-height: 1.65;
+    }
+    .explain strong { color: var(--blue); }
+    .detail {
+      margin-top: 8px;
+      padding: 10px;
+      border-left: 4px solid var(--blue);
+      background: #f8fafc;
+      color: var(--muted);
+      min-height: 42px;
+    }
+    @media (max-width: 850px) {
+      .controls { grid-template-columns: auto auto 1fr; }
+      .counter { grid-column: 1 / -1; }
+      .visual { grid-template-columns: 1fr; }
+      .formula { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo">
+    <header>
+      <h1>positive negative phase animation</h1>
+      <p class="purpose">正相と負相を比べる</p>
+      <p class="target"><strong>見るべき誤解:</strong> CDを通常のbackpropと思う</p>
+    </header>
+    <div class="controls">
+      <button id="prev">戻る</button>
+      <button id="next">進む</button>
+      <input id="seek" type="range" min="0" max="0" value="0">
+      <span id="counter" class="counter"></span>
+    </div>
+    <pre id="formula" class="formula"></pre>
+    <main class="visual" id="visual"></main>
+    <section class="explain">
+      <div id="explanation"></div>
+      <div id="detail" class="detail">ブロックをクリックすると、その計算の見方を表示します。</div>
+    </section>
+  </div>
+  <script>
+    const steps = [{"name": "入力を確認する", "formula": "入力: data | \\langle vh^\\top\\rangle_{data}-\\langle vh^\\top\\rangle_{model}", "explanation": "まず、式の左側にある入力とshapeを固定します。ここが曖昧だと後続の式を追えません。", "lanes": [[{"label": "data", "shape": "data v and model v'", "value": "このデモで追跡するテンソル", "kind": "normal", "detail": "", "grid": [["v data"], ["v model"]], "hot": [0, 1]}], [{"label": "まだ計算しない", "shape": "-", "value": "入力の意味を確認する段階", "kind": "normal", "detail": ""}], [{"label": "出力は未計算", "shape": "-", "value": "次のステップで計算される", "kind": "normal", "detail": ""}]], "detail": "Restricted Boltzmann Machine: エネルギーで分布を表すのpositive negative phase animationでは、最初に入力のshapeと意味を読む。", "active": 0, "activeLane": 0}, {"name": "計算ブロックを通す", "formula": "計算: contrast | \\langle vh^\\top\\rangle_{data}-\\langle vh^\\top\\rangle_{model}", "explanation": "数式の中心になる演算を1つだけ動かします。複数の概念を同時に動かさないことが重要です。", "lanes": [[{"label": "data", "shape": "data v and model v'", "value": "入力値", "kind": "normal", "detail": "", "grid": [["v data"], ["v model"]]}], [{"label": "contrast", "shape": "positive - negative phase", "value": "式の中心の変換", "kind": "warn", "detail": "ここが教材で最も説明すべき変換です。", "grid": [["vh_data"], ["vh_model"]], "hot": [0]}], [{"label": "中間値", "shape": "positive - negative phase", "value": "最終出力の直前の値", "kind": "normal", "detail": "", "grid": [["vh_data"], ["vh_model"]], "hot": [0]}]], "detail": "contrastが何をしているかを式とコードで対応させる。", "active": 0, "activeLane": 1}, {"name": "出力とlossへ接続する", "formula": "出力: update | \\langle vh^\\top\\rangle_{data}-\\langle vh^\\top\\rangle_{model}", "explanation": "出力がTrainerのlossやサンプリング手順へどう渡るかを確認します。", "lanes": [[{"label": "data", "shape": "data v and model v'", "value": "同じ入力を使う", "kind": "normal", "detail": ""}], [{"label": "contrast", "shape": "positive - negative phase", "value": "変換済み", "kind": "normal", "detail": ""}], [{"label": "update", "shape": "Delta W", "value": "Trainerのlossまたは生成手順へ渡る", "kind": "result", "detail": "", "grid": [["update W"]], "good": [0, 1]}]], "detail": "出力が何を表すかを一文で説明できれば、このアニメーションの目標は達成です。", "active": 0, "activeLane": 2}];
+    const lanes = ["入力", "計算", "出力"];
+    let index = 0;
+    const visual = document.getElementById("visual");
+    const formula = document.getElementById("formula");
+    const explanation = document.getElementById("explanation");
+    const detail = document.getElementById("detail");
+    const seek = document.getElementById("seek");
+    const counter = document.getElementById("counter");
+    seek.max = String(steps.length - 1);
+
+    function cellsFor(block) {
+      if (!block.grid) return "";
+      const cols = block.grid[0].length;
+      return `<div class="grid" style="grid-template-columns: repeat(${cols}, minmax(22px, 1fr));">` +
+        block.grid.flat().map((v, i) => `<div class="cell ${block.hot?.includes(i) ? "hot" : ""} ${block.good?.includes(i) ? "good" : ""} ${block.bad?.includes(i) ? "bad" : ""}">${v}</div>`).join("") +
+        `</div>`;
+    }
+
+    function blockHtml(block, active) {
+      return `<article class="block ${active ? "active" : ""}" data-kind="${block.kind || "normal"}" data-detail="${encodeURIComponent(block.detail || block.value || "")}">
+        <div class="label">${block.label}</div>
+        <div class="shape">${block.shape}</div>
+        <div class="value">${block.value || ""}</div>
+        ${cellsFor(block)}
+      </article>`;
+    }
+
+    function render() {
+      const step = steps[index];
+      formula.textContent = step.formula;
+      explanation.innerHTML = `<strong>${step.name}</strong>　${step.explanation}`;
+      counter.textContent = `${index + 1} / ${steps.length}`;
+      seek.value = String(index);
+      visual.innerHTML = lanes.map((lane, laneIndex) => {
+        const blocks = (step.lanes?.[laneIndex] || []).map((block, blockIndex) => blockHtml(block, laneIndex === (step.activeLane ?? 1) && blockIndex === step.active)).join("");
+        return `<section class="lane"><div class="lane-title">${lane}</div>${blocks}</section>`;
+      }).join("");
+      detail.textContent = step.detail || "ブロックをクリックすると、その計算の見方を表示します。";
+      document.querySelectorAll(".block").forEach((el) => {
+        el.addEventListener("click", () => {
+          detail.textContent = decodeURIComponent(el.dataset.detail || "");
+        });
+      });
+    }
+
+    document.getElementById("prev").addEventListener("click", () => {
+      index = Math.max(0, index - 1);
+      render();
+    });
+    document.getElementById("next").addEventListener("click", () => {
+      index = Math.min(steps.length - 1, index + 1);
+      render();
+    });
+    seek.addEventListener("input", (event) => {
+      index = Number(event.target.value);
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hugging Face Trainer 解説スライド</title>
+<style>
+  :root{
+    --navy:#111827; --navy2:#1f2937; --blue:#2563eb; --blue2:#0ea5e9;
+    --ink:#172033; --muted:#64748b; --line:#d7e0ec; --bg:#f5f7fb;
+    --cream:#fff7d6; --yellow:#f4c542; --green:#16a34a; --red:#dc6060;
+    --surface:#ffffff; --surface-soft:#f8fbff; --shadow:0 20px 55px rgba(21,32,55,.16);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#e8eef6;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;}
+  body{min-height:100vh;padding:24px;display:grid;place-items:center;overflow:hidden;}
+  .deck{position:relative;width:1280px;height:720px;transform:scale(var(--deck-scale,1));transform-origin:center center;}
+  .slide{
+    display:none;position:absolute;inset:0;width:1280px;height:720px;background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%);border:1px solid #cbd5e1;
+    box-shadow:var(--shadow);overflow:hidden;padding:42px 54px;
+  }
+  .slide.active{display:block;animation:slideFade .16s ease-out;}
+  @keyframes slideFade{from{opacity:.2;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+  .slide::before{content:"";position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(90deg,var(--blue),var(--blue2),var(--yellow));}
+  .slide.dark{background:radial-gradient(circle at 88% 8%,rgba(14,165,233,.24),transparent 32%),linear-gradient(135deg,#0f172a 0%,#18233a 100%);color:white;}
+  .kicker{display:inline-block;background:rgba(37,99,235,.96);color:white;border-radius:7px;padding:8px 15px;font-weight:800;font-size:20px;letter-spacing:.02em;margin-bottom:18px;}
+  h1{font-size:68px;line-height:1.05;margin:0 0 18px;font-weight:900;letter-spacing:0;}
+  h2{font-size:37px;line-height:1.18;margin:0 0 17px;font-weight:900;letter-spacing:0;}
+  h3{font-size:24px;line-height:1.25;margin:0 0 11px;font-weight:900;}
+  p{font-size:21px;line-height:1.52;margin:0 0 12px;}
+  .lead{font-size:28px;font-weight:800;color:#24456d;margin-bottom:22px}.dark .lead{color:#e8eef9}
+  .rule{height:1px;background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,.12));margin:20px 0 26px;}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start;}
+  .cols-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;}
+  .box{border:1px solid var(--line);border-radius:8px;padding:20px 22px;background:var(--surface);box-shadow:0 10px 28px rgba(15,23,42,.06);}
+  .box.blue{background:#eff6ff;border-color:#b8d6ff}.box.yellow{background:var(--cream);border-color:#edc95b}.box.green{background:#eefbf4;border-color:#9bdcb6}
+  .dark .box{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);box-shadow:none;color:white}
+  ul{margin:10px 0 0;padding-left:25px;font-size:21px;line-height:1.55} li{margin:5px 0;}
+  code,.mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+  .mono{background:#eef3f8;border:1px solid #d9e3ef;border-radius:5px;padding:1px 5px;color:#0f2f57;font-size:.94em}.dark .mono{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.16);color:#eef6ff}
+  pre{margin:0;background:#111827;color:#eaf2ff;border-radius:8px;padding:18px 20px;font-size:17px;line-height:1.42;white-space:pre-wrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09),0 12px 28px rgba(15,23,42,.12);}
+  pre.python-highlighted{color:#e5e7eb}
+  .py-comment{color:#94a3b8;font-style:italic}.py-string{color:#fbbf24}.py-keyword{color:#93c5fd;font-weight:800}.py-builtin{color:#67e8f9}.py-constant{color:#fca5a5;font-weight:750}.py-number{color:#c4b5fd}.py-function{color:#86efac}.py-operator{color:#fda4af}
+  pre.small{font-size:15.5px;line-height:1.36}.code-title{font-weight:900;margin-bottom:9px;color:#1d3f6f;font-size:20px}.dark .code-title{color:#dceaff}
+  .tag{display:inline-flex;align-items:center;gap:8px;background:#123b67;color:white;border-radius:7px;padding:5px 11px;font-weight:900;font-size:18px;margin-bottom:10px}
+  .num{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:8px;background:var(--blue);color:white;font-size:24px;font-weight:900;margin-right:12px;vertical-align:middle;box-shadow:0 7px 18px rgba(37,99,235,.23);}
+  .footer{position:absolute;right:26px;bottom:20px;background:#1e3a5f;color:white;border-radius:7px;padding:7px 14px;font-size:20px;font-weight:900;}
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:22px;align-items:stretch}.step{border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:17px 12px;background:rgba(255,255,255,.08);text-align:center}.step b{display:block;font-size:22px;margin-bottom:8px}.step .n{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#f4c542;color:#15213a;font-size:24px;font-weight:900;margin-bottom:9px}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:17px;background:white;border:1px solid #c7d5e6;border-radius:8px;overflow:hidden}th{background:#eaf3ff;text-align:left;color:#17345a;font-weight:900}td,th{border-right:1px solid #c7d5e6;border-bottom:1px solid #c7d5e6;padding:10px 12px;vertical-align:top}td:last-child,th:last-child{border-right:0}tr:last-child td{border-bottom:0}.twocol-table{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .callout{display:flex;gap:14px;align-items:flex-start;border-radius:8px;padding:15px 18px;background:#fff7d6;border:1px solid #e7c04e;font-size:20px;line-height:1.5}.callout .icon{font-size:29px;line-height:1}.callout b{display:block;margin-bottom:3px}
+  .diagram{display:grid;grid-template-columns:1fr 52px 1fr 52px 1fr;gap:10px;align-items:center;margin-top:22px}.card{border:1px solid #c9d7e8;background:var(--surface);border-radius:8px;padding:18px;text-align:center;min-height:132px;box-shadow:0 10px 24px rgba(15,23,42,.06)}.card b{font-size:23px}.arrow{font-size:40px;text-align:center;color:#d99f0f;font-weight:900}
+  .mini{font-size:18px;color:var(--muted)}.dark .mini{color:#b9c8df}.em{color:#f6c95b;font-weight:900}.ok{color:#16884c;font-weight:900}.warn{color:#b45414;font-weight:900}
+  .slide-nav{position:fixed;left:50%;bottom:18px;z-index:10;display:flex;align-items:center;gap:12px;transform:translateX(-50%);background:rgba(15,23,42,.86);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:10px 12px;box-shadow:0 14px 34px rgba(15,23,42,.22);backdrop-filter:blur(10px);}
+  .slide-nav button{width:44px;height:38px;border:0;border-radius:7px;background:#f8fafc;color:#10213d;font-size:24px;font-weight:900;line-height:1;cursor:pointer;}
+  .slide-nav button:disabled{opacity:.38;cursor:not-allowed;}
+  .slide-nav button:not(:disabled):hover{background:#dbeafe;}
+  .slide-status{min-width:78px;color:white;font-size:16px;font-weight:900;text-align:center;}
+  @media print{body{display:block;overflow:visible;padding:0;background:white}.deck{display:flex;flex-direction:column;gap:0;width:auto;height:auto;transform:none!important}.slide{display:block!important;position:relative;inset:auto;box-shadow:none;border:0;page-break-after:always;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh}.footer{bottom:18px}.slide-nav{display:none}}
+  @media screen and (max-width:720px){body{padding:12px}.slide-nav{bottom:10px}.slide-nav button{width:42px;height:36px}}
+</style>
+</head>
+<body>
+<main class="deck">
+
+<section class="slide dark active">
+  <div class="kicker">Hugging Face Transformers</div>
+  <h1>Trainer の使い方</h1>
+  <p class="lead">PyTorch の学習ループを「決まった部品」に分けて渡す</p>
+  <div class="rule"></div>
+  <div class="cols">
+    <div class="box">
+      <h2>Trainer とは？</h2>
+      <ul>
+        <li><span class="em">forward → loss → backward → optimizer.step</span> の流れを管理</li>
+        <li>評価・ログ出力・保存を定期的に実行</li>
+        <li>GPU / CPU の切り替えや batch 処理も任せられる</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h2>このスライドで作るもの</h2>
+      <ul>
+        <li>Iris データセットを Trainer 用 Dataset にする</li>
+        <li>普通の MLP を Trainer 用モデルで包む</li>
+        <li>accuracy・TrainingArguments・Trainer を接続する</li>
+      </ul>
+    </div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b>Dataset</b><span class="mini">features / labels</span></div>
+    <div class="step"><span class="n">2</span><b>Model</b><span class="mini">logits / loss</span></div>
+    <div class="step"><span class="n">3</span><b>Metrics</b><span class="mini">accuracy</span></div>
+    <div class="step"><span class="n">4</span><b>Args + Trainer</b><span class="mini">設定と接続</span></div>
+    <div class="step"><span class="n">5</span><b>train()</b><span class="mini">学習実行</span></div>
+  </div>
+  <div class="footer">1</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">1</span>Trainer 用 Dataset を作る</h2>
+  <p>Trainer は Dataset から <span class="mono">dict</span> を受け取ります。今回のキーは <span class="mono">features</span> と <span class="mono">labels</span> です。</p>
+  <div class="cols">
+    <div>
+      <div class="code-title">IrisDataset</div>
+<pre class="small">class IrisDataset(Dataset[dict[str, torch.Tensor]]):
+    """Iris の特徴量とラベルを Trainer 用の辞書で返す Dataset."""
+
+    def __init__(self, features: np.ndarray, labels: np.ndarray) -> None:
+        self.features = torch.tensor(features, dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.long)
+
+    def __len__(self) -> int:
+        return len(self.labels)
+
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        return {
+            "features": self.features[index],
+            "labels": self.labels[index],
+        }</pre>
+    </div>
+    <div>
+      <div class="box blue">
+        <h3>ここで重要なこと</h3>
+        <ul>
+          <li><span class="mono">__len__</span>：データ数を返す</li>
+          <li><span class="mono">__getitem__</span>：1 サンプルを辞書で返す</li>
+          <li><span class="mono">features</span> は <span class="mono">float32</span></li>
+          <li><span class="mono">labels</span> は分類用なので <span class="mono">long</span></li>
+        </ul>
+      </div>
+      <div class="callout" style="margin-top:18px"><span class="icon">💡</span><div><b>キー名が model.forward の引数名と対応する</b><span class="mono">features</span> と <span class="mono">labels</span> を返すので、後で作る <span class="mono">forward(features, labels)</span> にそのまま渡せます。</div></div>
+    </div>
+  </div>
+  <div class="footer">2</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">2</span>Train / Validation / Test 用に Dataset を作成</h2>
+  <p>データ分割後の NumPy 配列を、Trainer が読める Dataset に変換します。</p>
+  <div class="cols">
+    <div>
+<pre># Trainer 用の Dataset を作成する
+trainer_train_dataset = IrisDataset(X_train, y_train)
+trainer_val_dataset   = IrisDataset(X_val, y_val)
+trainer_test_dataset  = IrisDataset(X_test, y_test)</pre>
+      <div class="callout" style="margin-top:20px"><span class="icon">✅</span><div><b>Trainer に直接渡すのはこの Dataset</b>NumPy 配列をそのまま渡すのではなく、<span class="mono">__getitem__</span> で辞書を返す Dataset として渡します。</div></div>
+    </div>
+    <div class="diagram">
+      <div class="card"><b>X_train, y_train</b><br><span class="mini">NumPy 配列</span></div><div class="arrow">→</div>
+      <div class="card"><b>IrisDataset</b><br><span class="mini">Tensor に変換</span></div><div class="arrow">→</div>
+      <div class="card"><b>Trainer</b><br><span class="mini">batch として受け取る</span></div>
+    </div>
+  </div>
+  <div class="box yellow" style="margin-top:22px">
+    <h3>役割分担</h3>
+    <p>Dataset は「データをどう取り出すか」だけを担当します。学習方法、損失関数、評価指標は別の部品として Trainer に渡します。</p>
+  </div>
+  <div class="footer">3</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">3</span>Trainer 用モデル：logits と loss を返す</h2>
+  <p>Trainer はモデルの <span class="mono">forward</span> が返す辞書を見ます。分類では <span class="mono">logits</span> と <span class="mono">loss</span> が重要です。</p>
+  <div class="cols">
+    <div>
+<pre class="small">class ClassifierForTrainer(nn.Module):
+    """Trainer でクラス分類を学習するためのモデル."""
+
+    def __init__(self, net: nn.Module, loss_fn: nn.Module) -> None:
+        super().__init__()
+        self.net = net
+        self.loss_fn = loss_fn
+
+    def forward(
+        self,
+        features: torch.Tensor,
+        labels: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        logits = self.net(features)
+        output = {"logits": logits}
+        if labels is not None:
+            output["loss"] = self.loss_fn(logits, labels)
+        return output</pre>
+    </div>
+    <div>
+      <div class="box blue"><h3>なぜ包むのか？</h3><ul><li>普通の <span class="mono">nn.Sequential</span> は logits しか返さない</li><li>Trainer は学習時に <span class="mono">loss</span> を必要とする</li><li>そこで、元のネットワークに loss 計算を追加する</li></ul></div>
+      <div class="box green" style="margin-top:18px"><h3>labels がない場合</h3><p>推論や一部の評価では labels がないこともあるので、そのときは <span class="mono">logits</span> だけ返せる形にしています。</p></div>
+    </div>
+  </div>
+  <div class="footer">4</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">4</span>MLP・損失関数・最適化手法を定義</h2>
+  <p>ここでは Iris の 4 特徴量から 3 クラス分類する MLP を作ります。</p>
+  <div class="cols">
+    <div>
+<pre class="small"># ニューラルネットワークの構造を定義する
+net = nn.Sequential(
+    nn.Linear(4, 16),
+    nn.ReLU(),
+    nn.Linear(16, 8),
+    nn.ReLU(),
+    nn.Linear(8, 3),
+)
+
+# 損失関数を定義する
+loss_fn = nn.CrossEntropyLoss()
+
+# 最適化手法を定義する
+optimizer = torch.optim.SGD(net.parameters(), lr=0.05)
+
+# Trainer 用のモデルを作成する
+trainer_model = ClassifierForTrainer(net, loss_fn)</pre>
+    </div>
+    <div>
+      <table>
+        <tr><th>部品</th><th>意味</th></tr>
+        <tr><td><span class="mono">nn.Linear(4,16)</span></td><td>Iris の 4 個の特徴量を入力</td></tr>
+        <tr><td><span class="mono">nn.Linear(8,3)</span></td><td>3 クラス分のスコアを出力</td></tr>
+        <tr><td><span class="mono">CrossEntropyLoss</span></td><td>多クラス分類でよく使う損失関数</td></tr>
+        <tr><td><span class="mono">SGD</span></td><td>重みを更新する方法</td></tr>
+        <tr><td><span class="mono">ClassifierForTrainer</span></td><td>Trainer が扱える返り値に整えるラッパー</td></tr>
+      </table>
+      <div class="callout" style="margin-top:18px"><span class="icon">⚠️</span><div><b>learning rate が 2 箇所にある</b>このコードでは optimizer の <span class="mono">lr=0.05</span> が実際に使われます。後で <span class="mono">optimizers=(optimizer, None)</span> として明示的に渡すためです。</div></div>
+    </div>
+  </div>
+  <div class="footer">5</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">5</span>評価指標 accuracy を計算する</h2>
+  <p>Trainer の評価結果 <span class="mono">EvalPrediction</span> から logits と正解ラベルを取り出し、accuracy を返します。</p>
+  <div class="cols">
+    <div>
+<pre># Trainer の評価結果から accuracy を計算する関数を定義する
+def compute_iris_metrics(eval_pred: EvalPrediction) -> dict[str, float]:
+    """Trainer の評価結果から accuracy を計算する."""
+    logits = eval_pred.predictions
+    labels = eval_pred.label_ids
+    predictions = np.argmax(logits, axis=1)
+    return {"accuracy": accuracy_score(labels, predictions)}</pre>
+    </div>
+    <div class="box blue">
+      <h3>処理の流れ</h3>
+      <ul>
+        <li><span class="mono">logits</span>：各クラスのスコア</li>
+        <li><span class="mono">np.argmax(..., axis=1)</span>：一番スコアの高いクラスを予測ラベルにする</li>
+        <li><span class="mono">accuracy_score</span>：正解ラベルと予測ラベルの一致率を計算</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer">6</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">6</span>TrainingArguments：学習の設定を書く</h2>
+  <p>エポック数、バッチサイズ、ログ頻度、評価頻度、保存先などをまとめて指定します。</p>
+<pre class="small">training_args = TrainingArguments(
+    output_dir=f"./results/MLP_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+    num_train_epochs=80,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=50,
+    learning_rate=0.01,
+    logging_strategy="epoch",
+    eval_strategy="epoch",
+    seed=SEED,
+    use_cpu=not torch.cuda.is_available(),
+)</pre>
+  <div class="twocol-table" style="margin-top:18px">
+    <table><tr><th>引数</th><th>説明</th></tr><tr><td><span class="mono">output_dir</span></td><td>ログやチェックポイントの保存先</td></tr><tr><td><span class="mono">num_train_epochs</span></td><td>学習を何周するか</td></tr><tr><td><span class="mono">per_device_train_batch_size</span></td><td>学習時のバッチサイズ</td></tr><tr><td><span class="mono">per_device_eval_batch_size</span></td><td>評価時のバッチサイズ</td></tr></table>
+    <table><tr><th>引数</th><th>説明</th></tr><tr><td><span class="mono">logging_strategy</span></td><td>ログ出力の頻度</td></tr><tr><td><span class="mono">eval_strategy</span></td><td>評価の頻度</td></tr><tr><td><span class="mono">seed</span></td><td>乱数シード</td></tr><tr><td><span class="mono">use_cpu</span></td><td>GPU が無ければ CPU を使う</td></tr></table>
+  </div>
+  <div class="footer">7</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">7</span>Trainer を作成して部品を接続する</h2>
+  <p>ここまで作った「モデル・設定・データ・評価関数・optimizer」を Trainer に渡します。</p>
+  <div class="cols">
+    <div>
+<pre class="small">iris_trainer = Trainer(
+    model=trainer_model,
+    args=training_args,
+    train_dataset=trainer_train_dataset,
+    eval_dataset=trainer_val_dataset,
+    compute_metrics=compute_iris_metrics,
+    optimizers=(optimizer, None),
+)</pre>
+    </div>
+    <div>
+      <table>
+        <tr><th>引数</th><th>渡すもの</th></tr>
+        <tr><td><span class="mono">model</span></td><td><span class="mono">logits</span> と <span class="mono">loss</span> を返すモデル</td></tr>
+        <tr><td><span class="mono">args</span></td><td>学習設定</td></tr>
+        <tr><td><span class="mono">train_dataset</span></td><td>学習データ</td></tr>
+        <tr><td><span class="mono">eval_dataset</span></td><td>検証データ</td></tr>
+        <tr><td><span class="mono">compute_metrics</span></td><td>評価指標を計算する関数</td></tr>
+        <tr><td><span class="mono">optimizers</span></td><td>optimizer と scheduler</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="footer">8</div>
+</section>
+
+<section class="slide">
+  <h2><span class="num">8</span>train() を呼ぶと学習が始まる</h2>
+  <p>最後は <span class="mono">train()</span> を呼び出すだけです。</p>
+  <div class="cols">
+    <div>
+<pre>train_output = iris_trainer.train()</pre>
+      <div class="box green" style="margin-top:20px"><h3>Trainer が内部で行うこと</h3><ul><li>Dataset から batch を作る</li><li>model.forward を呼んで logits / loss を得る</li><li>backward して optimizer で重みを更新</li><li>epoch ごとに評価・ログ出力を行う</li></ul></div>
+    </div>
+    <div class="box yellow">
+      <h3>まとめ</h3>
+      <p>Trainer は魔法ではなく、毎回書く学習ループを共通化したものです。</p>
+      <ul>
+        <li>Dataset：<span class="mono">features</span> と <span class="mono">labels</span> を返す</li>
+        <li>Model：<span class="mono">logits</span> と <span class="mono">loss</span> を返す</li>
+        <li>Metrics：評価結果から accuracy を返す</li>
+        <li>TrainingArguments：学習の設定を書く</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer">9</div>
+</section>
+
+</main>
+<nav class="slide-nav" aria-label="スライド操作">
+  <button type="button" id="prev-slide" aria-label="前のスライド">‹</button>
+  <span class="slide-status" id="slide-status">1 / 1</span>
+  <button type="button" id="next-slide" aria-label="次のスライド">›</button>
+</nav>
+<script>
+(() => {
+  const escapeHtml = (value) => value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+
+  const keywords = new Set([
+    "and", "as", "assert", "break", "class", "continue", "def", "elif", "else",
+    "except", "finally", "for", "from", "if", "import", "in", "is", "lambda",
+    "not", "or", "pass", "raise", "return", "super", "try", "while", "with", "yield",
+  ]);
+  const builtins = new Set([
+    "dict", "float", "int", "len", "list", "print", "range", "str", "tuple",
+    "np", "torch", "nn", "Dataset", "Trainer", "TrainingArguments", "EvalPrediction",
+    "IrisDataset", "ClassifierForTrainer",
+  ]);
+  const constants = new Set(["False", "None", "True"]);
+
+  const highlightPython = (source) => {
+    let html = "";
+    let index = 0;
+    while (index < source.length) {
+      const rest = source.slice(index);
+
+      if (source[index] === "#") {
+        const end = source.indexOf("\n", index);
+        const stop = end === -1 ? source.length : end;
+        html += `<span class="py-comment">${escapeHtml(source.slice(index, stop))}</span>`;
+        index = stop;
+        continue;
+      }
+
+      const stringMatch = rest.match(/^([rubfRUBF]{0,3})("""|'''|"|')/);
+      if (stringMatch) {
+        const prefix = stringMatch[1];
+        const quote = stringMatch[2];
+        let end = index + prefix.length + quote.length;
+        while (end < source.length) {
+          if (quote.length === 1 && source[end] === "\\") {
+            end += 2;
+            continue;
+          }
+          if (source.startsWith(quote, end)) {
+            end += quote.length;
+            break;
+          }
+          end += 1;
+        }
+        html += `<span class="py-string">${escapeHtml(source.slice(index, end))}</span>`;
+        index = end;
+        continue;
+      }
+
+      const numberMatch = rest.match(/^\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i);
+      if (numberMatch) {
+        html += `<span class="py-number">${numberMatch[0]}</span>`;
+        index += numberMatch[0].length;
+        continue;
+      }
+
+      const identifierMatch = rest.match(/^[A-Za-z_][A-Za-z0-9_]*/);
+      if (identifierMatch) {
+        const token = identifierMatch[0];
+        const after = source.slice(index + token.length).match(/^\s*(.)/);
+        let className = "";
+        if (keywords.has(token)) className = "py-keyword";
+        else if (constants.has(token)) className = "py-constant";
+        else if (builtins.has(token)) className = "py-builtin";
+        else if (after?.[1] === "(") className = "py-function";
+        html += className ? `<span class="${className}">${token}</span>` : token;
+        index += token.length;
+        continue;
+      }
+
+      if (/^[=+\-*/%<>!|&:.,()[\]{}]/.test(source[index])) {
+        html += `<span class="py-operator">${escapeHtml(source[index])}</span>`;
+      } else {
+        html += escapeHtml(source[index]);
+      }
+      index += 1;
+    }
+    return html;
+  };
+
+  document.querySelectorAll("pre").forEach((pre) => {
+    pre.innerHTML = highlightPython(pre.textContent);
+    pre.classList.add("python-highlighted");
+  });
+
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const prevButton = document.querySelector("#prev-slide");
+  const nextButton = document.querySelector("#next-slide");
+  const status = document.querySelector("#slide-status");
+  let current = 0;
+
+  const hashIndex = () => {
+    const match = location.hash.match(/^#slide-(\d+)$/);
+    return match ? Number(match[1]) - 1 : 0;
+  };
+
+  const fitDeck = () => {
+    const widthScale = (window.innerWidth - 48) / 1280;
+    const heightScale = (window.innerHeight - 104) / 720;
+    document.documentElement.style.setProperty(
+      "--deck-scale",
+      Math.max(0.2, Math.min(widthScale, heightScale, 1)).toString()
+    );
+  };
+
+  const showSlide = (index, updateHash = true) => {
+    current = Math.max(0, Math.min(index, slides.length - 1));
+    slides.forEach((slide, slideIndex) => {
+      slide.classList.toggle("active", slideIndex === current);
+      slide.setAttribute("aria-hidden", slideIndex === current ? "false" : "true");
+    });
+    prevButton.disabled = current === 0;
+    nextButton.disabled = current === slides.length - 1;
+    status.textContent = `${current + 1} / ${slides.length}`;
+    if (updateHash) {
+      history.replaceState(null, "", `#slide-${current + 1}`);
+    }
+  };
+
+  prevButton.addEventListener("click", () => showSlide(current - 1));
+  nextButton.addEventListener("click", () => showSlide(current + 1));
+  window.addEventListener("resize", fitDeck);
+  window.addEventListener("hashchange", () => showSlide(hashIndex(), false));
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "PageUp") {
+      event.preventDefault();
+      showSlide(current - 1);
+    }
+    if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+      event.preventDefault();
+      showSlide(current + 1);
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      showSlide(0);
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      showSlide(slides.length - 1);
+    }
+  });
+
+  fitDeck();
+  showSlide(hashIndex(), false);
+})();
+</script>
+</body>
+</html>

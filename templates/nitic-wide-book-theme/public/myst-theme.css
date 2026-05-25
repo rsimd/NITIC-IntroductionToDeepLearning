@@ -440,6 +440,82 @@ body:has(.nitic-demo-embed-target) .nitic-demo-iframe {
   color: rgb(17 24 39) !important;
 }
 
+.myst-outline-list .myst-outline-item > a.pl-2 {
+  font-weight: 700 !important;
+}
+
+.myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-4 {
+  color: rgb(15 23 42) !important;
+}
+
+.dark .myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-4 {
+  color: rgb(248 250 252) !important;
+}
+
+.myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-6,
+.myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-8,
+.myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-10,
+.myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-12 {
+  color: rgb(148 163 184) !important;
+}
+
+.dark .myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-6,
+.dark .myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-8,
+.dark .myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-10,
+.dark .myst-outline-list .myst-outline-item:not(.myst-outline-item-active) > a.pl-12 {
+  color: rgb(100 116 139) !important;
+}
+
+.myst-outline-list .myst-outline-item.myst-outline-hash-active-item {
+  border-left-color: rgb(59 130 246) !important;
+  background: rgb(239 246 255) !important;
+}
+
+.dark .myst-outline-list .myst-outline-item.myst-outline-hash-active-item {
+  background: rgb(30 41 59) !important;
+}
+
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active,
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-2,
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-4,
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-6,
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-8,
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-10,
+.myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-12 {
+  color: rgb(37 99 235) !important;
+  font-weight: 700 !important;
+}
+
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active,
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-2,
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-4,
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-6,
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-8,
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-10,
+.dark .myst-outline-list .myst-outline-item > a.myst-outline-hash-active.pl-12 {
+  color: rgb(255 255 255) !important;
+}
+
+.myst-outline-list:has(a.myst-outline-hash-active)
+  .myst-outline-item-active:not(.myst-outline-hash-active-item) {
+  border-left-color: rgb(209 213 219) !important;
+  background: transparent !important;
+}
+
+.myst-outline-list:has(a.myst-outline-hash-active)
+  .myst-outline-item-active:not(.myst-outline-hash-active-item)
+  > a.pl-4 {
+  color: rgb(15 23 42) !important;
+  font-weight: 400 !important;
+}
+
+.dark
+  .myst-outline-list:has(a.myst-outline-hash-active)
+  .myst-outline-item-active:not(.myst-outline-hash-active-item)
+  > a.pl-4 {
+  color: rgb(248 250 252) !important;
+}
+
 @media (min-width: 768px) {
   .myst-footer-links:has(> .myst-footer-link-next:only-child) {
     justify-content: flex-end !important;
