@@ -8,6 +8,7 @@ HTML アニメーションを JupyterBook のページとしてまとめる。
 各ページは通常の JupyterBook ページとして開けるほか，`?embed=1` を付けると iframe 埋め込み用の簡潔な表示になる。
 
 - [活性化関数ビューア](./activation-functions)
+- [ニューロン: 重み付き和と活性化関数](./neuron)
 - [Forward と損失のアニメーション](./forward-loss)
 - [Backward propagation アニメーション](./backward)
 - [Forward / Backward 学習アニメーション](./forward-backward-training)

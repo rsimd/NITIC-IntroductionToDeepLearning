@@ -30,6 +30,7 @@ project:
     - file: book/demos/index.md
       children:
         - file: book/demos/activation-functions.md
+        - file: book/demos/neuron.md
         - file: book/demos/forward-loss.md
         - file: book/demos/backward.md
         - file: book/demos/forward-backward-training.md

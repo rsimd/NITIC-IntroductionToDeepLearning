@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weighted Sum and Activation Animation</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --yellow: #fbbc04;
+      --red: #d93025;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --soft-yellow: #fff7d6;
+      --soft-red: #fce8e6;
+      --shadow: 0 16px 36px rgba(60, 64, 67, .14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+    .meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button, select {
+      min-height: 34px;
+      border: 1px solid #b8c8e8;
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font: inherit;
+      font-weight: 650;
+    }
+    button { cursor: pointer; }
+    select {
+      min-width: 132px;
+      background: #ffffff;
+    }
+    input[type="range"] { width: 170px; }
+    main {
+      display: grid;
+      grid-template-columns: minmax(720px, 1fr) 360px;
+      gap: 12px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+    section, aside {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+    }
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .formula-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(146px, 1fr));
+      gap: 8px;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    .formula-card {
+      min-height: 76px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fbfcff;
+      transition: background .25s ease, border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+    }
+    .formula-card.active {
+      border-color: #7baaf7;
+      background: #f3f8ff;
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .formula-card b {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    .math {
+      font-family: "Times New Roman", "Hiragino Mincho ProN", serif;
+      font-size: 17px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .stage {
+      position: relative;
+      height: 660px;
+      overflow: hidden;
+      border-top: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, rgba(215, 221, 229, .52) 1px, transparent 1px),
+        linear-gradient(rgba(215, 221, 229, .52) 1px, transparent 1px),
+        #ffffff;
+      background-size: 42px 42px;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: calc(100% - 110px);
+    }
+    .wire {
+      fill: none;
+      stroke: #202124;
+      stroke-width: 6;
+      stroke-linecap: round;
+      marker-end: url(#arrow);
+    }
+    .wire.output {
+      stroke-width: 5;
+    }
+    .wire.active {
+      stroke: var(--blue);
+      filter: drop-shadow(0 5px 10px rgba(26, 115, 232, .24));
+    }
+    .node-outline {
+      fill: #ffffff;
+      stroke: #202124;
+      stroke-width: 7;
+    }
+    .node-divider {
+      stroke: #202124;
+      stroke-width: 4;
+    }
+    .node-active {
+      fill: rgba(232, 240, 254, .9);
+      stroke: var(--blue);
+    }
+    .label {
+      fill: #111827;
+      font-size: 44px;
+      font-weight: 500;
+    }
+    .weight-label {
+      fill: #111827;
+      font-size: 34px;
+      font-weight: 600;
+    }
+    .node-symbol {
+      fill: #111827;
+      font-family: "Times New Roman", serif;
+      font-size: 52px;
+      font-style: italic;
+      font-weight: 700;
+    }
+    .value-pill {
+      fill: #ffffff;
+      stroke: #d7dde5;
+      stroke-width: 1.4;
+    }
+    .value-text {
+      fill: #374151;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .sum-panel, .activation-panel, .bias-panel {
+      opacity: .18;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .sum-panel.active, .activation-panel.active, .bias-panel.active {
+      opacity: 1;
+    }
+    .equation-box {
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      bottom: 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: var(--shadow);
+    }
+    .equation-main {
+      font-family: "Times New Roman", "Hiragino Mincho ProN", serif;
+      font-size: 32px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .equation-value {
+      justify-self: end;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: var(--soft-green);
+      color: #0d652d;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .side {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .step-panel {
+      padding: 12px;
+    }
+    .step-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .step-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .calc-grid {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+    }
+    .calc-row {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fbfcff;
+      transition: background .25s ease, border-color .25s ease;
+    }
+    .calc-row.active {
+      border-color: #a8dab5;
+      background: var(--soft-green);
+    }
+    .calc-row b {
+      color: #174ea6;
+      font-size: 16px;
+    }
+    .calc-row span {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+    .calc-row strong {
+      font-variant-numeric: tabular-nums;
+      font-size: 16px;
+    }
+    .slider-panel {
+      padding: 12px;
+    }
+    .slider-row {
+      display: grid;
+      grid-template-columns: 34px 1fr 54px;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .slider-row:first-child { margin-top: 0; }
+    .slider-row label { font-weight: 800; }
+    .slider-row output {
+      color: var(--muted);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .activation-card {
+      padding: 12px;
+    }
+    .activation-card .formula-large {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcff;
+      font-family: "Times New Roman", serif;
+      font-size: 22px;
+      text-align: center;
+    }
+    @media (max-width: 980px) {
+      header { align-items: stretch; flex-direction: column; }
+      .controls { justify-content: flex-start; }
+      main { grid-template-columns: 1fr; }
+      .stage { height: 520px; }
+      .equation-box { grid-template-columns: 1fr; }
+      .equation-main { font-size: 25px; white-space: normal; }
+    }
+  </style>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]]
+      },
+      svg: {
+        fontCache: "global"
+      },
+      startup: {
+        typeset: false
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>入力と重みの合計を活性化関数 f で変換</h1>
+      <div class="meta">x₁, x₂, x₃ を重み w₁, w₂, w₃ で掛け，合計してからバイアス b を足し，f に通して y を得る。</div>
+    </div>
+    <div class="controls">
+      <button id="play">一時停止</button>
+      <button id="prev">戻る</button>
+      <button id="next">進む</button>
+      <label class="small" for="activation">f</label>
+      <select id="activation">
+        <option value="sigmoid">sigmoid</option>
+        <option value="relu">ReLU</option>
+        <option value="tanh">tanh</option>
+        <option value="linear">identity</option>
+      </select>
+      <input id="seek" type="range" min="0" max="4" step="1" value="0" aria-label="step">
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="panel-head">
+        <h2>数式の流れ</h2>
+        <div id="counter" class="small">1 / 5</div>
+      </div>
+      <div class="formula-strip" id="formula-strip"></div>
+      <div class="stage">
+        <svg viewBox="0 0 900 570" role="img" aria-labelledby="svg-title svg-desc">
+          <title id="svg-title">Weighted sum and activation function</title>
+          <desc id="svg-desc">Three inputs flow through weights into a summation and activation unit.</desc>
+          <defs>
+            <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <path id="wire1" class="wire" d="M160 112 L372 272"></path>
+          <path id="wire2" class="wire" d="M150 285 L358 285"></path>
+          <path id="wire3" class="wire" d="M160 406 L372 298"></path>
+          <path id="wireOut" class="wire output" d="M506 285 L692 285"></path>
+
+          <text class="label" x="66" y="112">x<tspan baseline-shift="sub" font-size="30">1</tspan></text>
+          <text class="label" x="66" y="305">x<tspan baseline-shift="sub" font-size="30">2</tspan></text>
+          <text class="label" x="66" y="436">x<tspan baseline-shift="sub" font-size="30">3</tspan></text>
+          <text class="weight-label" x="235" y="176">w<tspan baseline-shift="sub" font-size="23">1</tspan></text>
+          <text class="weight-label" x="205" y="258">w<tspan baseline-shift="sub" font-size="23">2</tspan></text>
+          <text class="weight-label" x="250" y="440">w<tspan baseline-shift="sub" font-size="23">3</tspan></text>
+          <text class="label" x="724" y="303">y</text>
+
+          <circle id="nodeCircle" class="node-outline" cx="440" cy="285" r="66"></circle>
+          <line class="node-divider" x1="440" y1="219" x2="440" y2="351"></line>
+          <text class="node-symbol" x="392" y="304">Σ</text>
+          <text class="node-symbol" x="465" y="304">f</text>
+
+          <g id="inputValue1">
+            <rect class="value-pill" x="54" y="126" width="130" height="34" rx="7"></rect>
+            <text id="inputText1" class="value-text" x="68" y="148"></text>
+          </g>
+          <g id="inputValue2">
+            <rect class="value-pill" x="54" y="318" width="130" height="34" rx="7"></rect>
+            <text id="inputText2" class="value-text" x="68" y="340"></text>
+          </g>
+          <g id="inputValue3">
+            <rect class="value-pill" x="54" y="444" width="130" height="34" rx="7"></rect>
+            <text id="inputText3" class="value-text" x="68" y="466"></text>
+          </g>
+
+          <g id="productPanels">
+            <rect class="value-pill" x="198" y="92" width="168" height="42" rx="8"></rect>
+            <text id="prodText1" class="value-text" x="212" y="119"></text>
+            <rect class="value-pill" x="188" y="302" width="168" height="42" rx="8"></rect>
+            <text id="prodText2" class="value-text" x="202" y="329"></text>
+            <rect class="value-pill" x="198" y="410" width="168" height="42" rx="8"></rect>
+            <text id="prodText3" class="value-text" x="212" y="437"></text>
+          </g>
+
+          <g id="sumPanel" class="sum-panel">
+            <rect class="value-pill" x="362" y="362" width="164" height="50" rx="8"></rect>
+            <text id="sumText" class="value-text" x="378" y="393"></text>
+          </g>
+          <g id="biasPanel" class="bias-panel">
+            <rect class="value-pill" x="540" y="362" width="150" height="50" rx="8"></rect>
+            <text id="biasText" class="value-text" x="556" y="393"></text>
+          </g>
+          <g id="activationPanel" class="activation-panel">
+            <rect class="value-pill" x="610" y="210" width="206" height="48" rx="8"></rect>
+            <text id="activationText" class="value-text" x="626" y="240"></text>
+          </g>
+        </svg>
+        <div class="equation-box">
+          <div id="equation" class="equation-main"></div>
+          <div id="result" class="equation-value"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="step-panel">
+        <p id="step-title" class="step-title"></p>
+        <p id="step-text" class="step-text"></p>
+      </section>
+
+      <section>
+        <div class="panel-head">
+          <h2>現在の計算</h2>
+          <div class="small">値は変更可能</div>
+        </div>
+        <div class="calc-grid" id="calc-grid"></div>
+      </section>
+
+      <section class="activation-card">
+        <h2>活性化関数 f</h2>
+        <div id="activation-formula" class="formula-large"></div>
+        <p id="activation-note" class="step-text" style="margin-top: 8px;"></p>
+      </section>
+
+      <section class="slider-panel" id="sliders"></section>
+    </aside>
+  </main>
+
+  <script>
+    const state = {
+      step: 0,
+      playing: true,
+      activation: "sigmoid",
+      values: {
+        x1: 0.8,
+        x2: -0.4,
+        x3: 1.2,
+        w1: 1.4,
+        w2: -0.7,
+        w3: 0.9,
+        b: -0.3,
+      },
+    };
+
+    const steps = [
+      {
+        title: "1. 入力を受け取る",
+        formula: String.raw`\(x_1,\ x_2,\ x_3\)`,
+        text: "ニューロンには複数の入力が入る。ここでは3個の入力だけを表示している。",
+      },
+      {
+        title: "2. 入力に重みを掛ける",
+        formula: String.raw`\(w_1x_1,\ w_2x_2,\ w_3x_3\)`,
+        text: "各入力は対応する重みでスケールされる。重みが大きいほど，その入力の影響が大きくなる。",
+      },
+      {
+        title: "3. Σで合計する",
+        formula: String.raw`\(\sum_i w_ix_i\)`,
+        text: "重み付き入力をすべて足し合わせる。これが線形結合の中心になる。",
+      },
+      {
+        title: "4. バイアス b を足す",
+        formula: String.raw`\(z=\sum_i w_ix_i+b\)`,
+        text: "バイアスは活性化関数に入る前の値を平行移動する。しきい値を調整する役割として見られる。",
+      },
+      {
+        title: "5. 活性化関数 f で変換する",
+        formula: String.raw`\(y=f(z)\)`,
+        text: "最後に z を活性化関数に通して出力 y を作る。ここで非線形性が入る。",
+      },
+    ];
+
+    const activations = {
+      sigmoid: {
+        name: "sigmoid",
+        fn: z => 1 / (1 + Math.exp(-z)),
+        formula: String.raw`\[f(z)=\frac{1}{1+e^{-z}}\]`,
+        note: "出力を0から1の範囲に押し込む。",
+      },
+      relu: {
+        name: "ReLU",
+        fn: z => Math.max(0, z),
+        formula: String.raw`\[f(z)=\max(0,z)\]`,
+        note: "負の値は0，正の値はそのまま通す。",
+      },
+      tanh: {
+        name: "tanh",
+        fn: z => Math.tanh(z),
+        formula: String.raw`\[f(z)=\tanh(z)\]`,
+        note: "出力を-1から1の範囲に押し込む。",
+      },
+      linear: {
+        name: "identity",
+        fn: z => z,
+        formula: String.raw`\[f(z)=z\]`,
+        note: "活性化で値を変えない比較用。",
+      },
+    };
+
+    const sliderDefs = [
+      ["x1", "x₁", -2, 2, 0.1],
+      ["x2", "x₂", -2, 2, 0.1],
+      ["x3", "x₃", -2, 2, 0.1],
+      ["w1", "w₁", -2, 2, 0.1],
+      ["w2", "w₂", -2, 2, 0.1],
+      ["w3", "w₃", -2, 2, 0.1],
+      ["b", "b", -2, 2, 0.1],
+    ];
+
+    const $ = id => document.getElementById(id);
+    const fmt = value => {
+      const rounded = Math.round(value * 100) / 100;
+      return Object.is(rounded, -0) ? "0.00" : rounded.toFixed(2);
+    };
+    const tex = source => `\\(${source}\\)`;
+    let typesetTimer = null;
+
+    function typesetMath() {
+      clearTimeout(typesetTimer);
+      typesetTimer = setTimeout(() => {
+        if (!window.MathJax || !MathJax.typesetPromise) return;
+        MathJax.typesetClear([$("formula-strip"), $("equation"), $("activation-formula")]);
+        MathJax.typesetPromise([$("formula-strip"), $("equation"), $("activation-formula")]);
+      }, 0);
+    }
+
+    function compute() {
+      const v = state.values;
+      const p1 = v.w1 * v.x1;
+      const p2 = v.w2 * v.x2;
+      const p3 = v.w3 * v.x3;
+      const sum = p1 + p2 + p3;
+      const z = sum + v.b;
+      const f = activations[state.activation];
+      const y = f.fn(z);
+      return { p1, p2, p3, sum, z, y, f };
+    }
+
+    function renderStatic() {
+      $("formula-strip").innerHTML = steps.map((step, index) => `
+        <div class="formula-card" data-step="${index}">
+          <b>${step.title}</b>
+          <div class="math">${step.formula}</div>
+        </div>
+      `).join("");
+
+      $("calc-grid").innerHTML = [
+        ["p1", "w₁x₁", "w1 · x1"],
+        ["p2", "w₂x₂", "w2 · x2"],
+        ["p3", "w₃x₃", "w3 · x3"],
+        ["sum", "Σ", "p1 + p2 + p3"],
+        ["z", "z", "Σ + b"],
+        ["y", "y", "f(z)"],
+      ].map(([key, label, expr]) => `
+        <div class="calc-row" data-row="${key}">
+          <b>${label}</b>
+          <span>${expr}</span>
+          <strong id="calc-${key}"></strong>
+        </div>
+      `).join("");
+
+      $("sliders").innerHTML = sliderDefs.map(([key, label, min, max, step]) => `
+        <div class="slider-row">
+          <label for="${key}">${label}</label>
+          <input id="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${state.values[key]}">
+          <output id="${key}-out">${fmt(state.values[key])}</output>
+        </div>
+      `).join("");
+
+      sliderDefs.forEach(([key]) => {
+        $(key).addEventListener("input", event => {
+          state.values[key] = Number(event.target.value);
+          render();
+        });
+      });
+
+      document.querySelectorAll(".formula-card").forEach(card => {
+        card.addEventListener("click", () => {
+          state.step = Number(card.dataset.step);
+          state.playing = false;
+          render();
+        });
+      });
+    }
+
+    function render() {
+      const { p1, p2, p3, sum, z, y, f } = compute();
+      const v = state.values;
+
+      $("counter").textContent = `${state.step + 1} / ${steps.length}`;
+      $("seek").value = String(state.step);
+      $("play").textContent = state.playing ? "一時停止" : "再生";
+      $("activation").value = state.activation;
+
+      $("step-title").textContent = steps[state.step].title;
+      $("step-text").textContent = steps[state.step].text;
+
+      $("inputText1").textContent = `x₁ = ${fmt(v.x1)}`;
+      $("inputText2").textContent = `x₂ = ${fmt(v.x2)}`;
+      $("inputText3").textContent = `x₃ = ${fmt(v.x3)}`;
+      $("prodText1").textContent = `w₁x₁ = ${fmt(v.w1)}·${fmt(v.x1)} = ${fmt(p1)}`;
+      $("prodText2").textContent = `w₂x₂ = ${fmt(v.w2)}·${fmt(v.x2)} = ${fmt(p2)}`;
+      $("prodText3").textContent = `w₃x₃ = ${fmt(v.w3)}·${fmt(v.x3)} = ${fmt(p3)}`;
+      $("sumText").textContent = `Σ = ${fmt(sum)}`;
+      $("biasText").textContent = `+ b = ${fmt(v.b)}`;
+      $("activationText").textContent = `${f.name}: ${fmt(z)} → ${fmt(y)}`;
+
+      $("calc-p1").textContent = fmt(p1);
+      $("calc-p2").textContent = fmt(p2);
+      $("calc-p3").textContent = fmt(p3);
+      $("calc-sum").textContent = fmt(sum);
+      $("calc-z").textContent = fmt(z);
+      $("calc-y").textContent = fmt(y);
+
+      sliderDefs.forEach(([key]) => {
+        $(`${key}-out`).textContent = fmt(v[key]);
+      });
+
+      $("activation-formula").textContent = f.formula;
+      $("activation-note").textContent = f.note;
+
+      const equationPieces = [
+        tex(String.raw`y=f\left(\sum_i w_ix_i+b\right)`),
+        tex(String.raw`= ${f.name}\left(${fmt(p1)}+${fmt(p2)}+${fmt(p3)}+${fmt(v.b)}\right)`),
+        tex(String.raw`= ${f.name}\left(${fmt(z)}\right)`),
+      ];
+      $("equation").innerHTML = state.step < 4 ? equationPieces[Math.min(state.step, 2)] : tex(String.raw`= ${f.name}\left(${fmt(z)}\right) = ${fmt(y)}`);
+      $("result").textContent = state.step < 4 ? `z = ${fmt(z)}` : `y = ${fmt(y)}`;
+
+      document.querySelectorAll(".formula-card").forEach((card, index) => {
+        card.classList.toggle("active", index === state.step);
+      });
+
+      document.querySelectorAll(".wire").forEach(wire => wire.classList.remove("active"));
+      $("nodeCircle").classList.toggle("node-active", state.step >= 2);
+      $("sumPanel").classList.toggle("active", state.step >= 2);
+      $("biasPanel").classList.toggle("active", state.step >= 3);
+      $("activationPanel").classList.toggle("active", state.step >= 4);
+
+      if (state.step >= 1) {
+        ["wire1", "wire2", "wire3"].forEach(id => $(id).classList.add("active"));
+      }
+      if (state.step >= 4) {
+        $("wireOut").classList.add("active");
+      }
+
+      document.querySelectorAll(".calc-row").forEach(row => row.classList.remove("active"));
+      if (state.step === 1) {
+        ["p1", "p2", "p3"].forEach(key => document.querySelector(`[data-row="${key}"]`).classList.add("active"));
+      } else if (state.step === 2) {
+        document.querySelector('[data-row="sum"]').classList.add("active");
+      } else if (state.step === 3) {
+        document.querySelector('[data-row="z"]').classList.add("active");
+      } else if (state.step === 4) {
+        document.querySelector('[data-row="y"]').classList.add("active");
+      }
+      typesetMath();
+    }
+
+    function move(delta) {
+      state.step = Math.max(0, Math.min(steps.length - 1, state.step + delta));
+      render();
+    }
+
+    $("play").addEventListener("click", () => {
+      state.playing = !state.playing;
+      render();
+    });
+    $("prev").addEventListener("click", () => {
+      state.playing = false;
+      move(-1);
+    });
+    $("next").addEventListener("click", () => {
+      state.playing = false;
+      move(1);
+    });
+    $("seek").addEventListener("input", event => {
+      state.playing = false;
+      state.step = Number(event.target.value);
+      render();
+    });
+    $("activation").addEventListener("change", event => {
+      state.activation = event.target.value;
+      render();
+    });
+
+    renderStatic();
+    render();
+    window.addEventListener("load", typesetMath);
+    setInterval(() => {
+      if (!state.playing) return;
+      state.step = (state.step + 1) % steps.length;
+      render();
+    }, 1800);
+  </script>
+</body>
+</html>
