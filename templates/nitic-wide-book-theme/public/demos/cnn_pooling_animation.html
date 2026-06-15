@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNN Pooling Animation</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dde5;
+      --blue: #1a73e8;
+      --green: #188038;
+      --soft-blue: #e8f0fe;
+      --soft-green: #e6f4ea;
+      --shadow: 0 14px 32px rgba(60, 64, 67, .13);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: 0; }
+    .meta { color: var(--muted); font-size: 13px; }
+    .controls {
+      display: grid;
+      grid-template-columns: auto auto auto minmax(120px, 220px);
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      min-height: 34px;
+      border: 1px solid #b8c8e8;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #174ea6;
+      background: var(--soft-blue);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    input[type="range"] { width: 100%; }
+    main {
+      display: grid;
+      gap: 14px;
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stat,
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 1px 2px rgba(60, 64, 67, .05);
+    }
+    .stat { padding: 9px 10px; }
+    .stat b { display: block; font-size: 20px; line-height: 1.1; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .small { color: var(--muted); font-size: 12px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 160px minmax(0, .62fr);
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+    }
+    .matrix-panel {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+    .grid {
+      display: grid;
+      gap: 5px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+    .input-grid { grid-template-columns: repeat(4, 60px); }
+    .output-grid { grid-template-columns: repeat(2, 72px); }
+    .cell {
+      display: grid;
+      place-items: center;
+      height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .output-grid .cell { height: 66px; }
+    .method-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .method-option {
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: white;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .method-option.active {
+      border-color: #7baaf7;
+      background: var(--soft-blue);
+      color: #174ea6;
+    }
+    .cell.window {
+      border-color: #7baaf7;
+      background: var(--soft-blue);
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, .16) inset;
+    }
+    .cell.max {
+      border-color: var(--green);
+      background: var(--soft-green);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .cell.active-out {
+      border-color: var(--green);
+      background: var(--soft-green);
+      box-shadow: var(--shadow);
+    }
+    .operator {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+    .operator-label {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .operator b {
+      display: grid;
+      place-items: center;
+      width: 70px;
+      height: 70px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 19px;
+      box-shadow: var(--shadow);
+    }
+    .formula {
+      margin: 0 18px 18px;
+      border: 1px solid #7baaf7;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f3f8ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    @media (max-width: 820px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .controls { grid-template-columns: auto auto auto 1fr; width: 100%; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+      .input-grid { grid-template-columns: repeat(4, minmax(44px, 1fr)); width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>CNN: Pooling</h1>
+      <div class="meta">2×2 の領域から代表値を取り，位置ずれに少し強い小さな特徴マップへ縮約する</div>
+    </div>
+    <div class="controls">
+      <button id="play">一時停止</button>
+      <button id="prev">戻る</button>
+      <button id="next">進む</button>
+      <input id="seek" type="range" min="0" max="3" value="0" step="1" aria-label="position">
+    </div>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat"><b id="position">row 0, col 0</b><span>pooling window</span></div>
+      <div class="stat"><b>4×4</b><span>input feature map</span></div>
+      <div class="stat"><b>2×2</b><span>window, stride = 2</span></div>
+      <div class="stat"><b>2×2</b><span>pooled map</span></div>
+    </div>
+
+    <section>
+      <div class="panel-head">
+        <h2 id="methodTitle">Max pooling の計算</h2>
+        <span class="small">2×2領域から代表値を選ぶ</span>
+      </div>
+      <div class="workspace">
+        <div class="matrix-panel">
+          <h2>input feature map A</h2>
+          <div class="grid input-grid" id="inputGrid"></div>
+        </div>
+        <div class="operator">
+          <div class="operator-label">pooling method</div>
+          <div class="method-options" id="methodOptions"></div>
+          <b id="methodSymbol">max</b>
+          <span id="methodNote">最大反応だけを次へ渡す</span>
+        </div>
+        <div class="matrix-panel">
+          <h2>pooled map P</h2>
+          <div class="grid output-grid" id="outputGrid"></div>
+        </div>
+      </div>
+      <div class="formula" id="formula"></div>
+    </section>
+  </main>
+
+  <script>
+const input = [
+  [1, 3, 2, 0],
+  [2, 5, 1, 4],
+  [0, 2, 6, 3],
+  [1, 1, 2, 7],
+];
+const positions = [[0, 0], [0, 2], [2, 0], [2, 2]];
+const methods = [
+  {
+    key: "max",
+    title: "Max pooling の計算",
+    symbol: "max",
+    note: "最大反応だけを次へ渡す",
+    fn: values => Math.max(...values),
+    formulaName: "max",
+    highlight: (value, result) => value === result,
+  },
+  {
+    key: "average",
+    title: "Average pooling の計算",
+    symbol: "avg",
+    note: "局所領域の平均反応を次へ渡す",
+    fn: values => values.reduce((acc, v) => acc + v, 0) / values.length,
+    formulaName: "mean",
+    highlight: () => true,
+  },
+  {
+    key: "min",
+    title: "Min pooling の計算",
+    symbol: "min",
+    note: "最小反応を次へ渡す",
+    fn: values => Math.min(...values),
+    formulaName: "min",
+    highlight: (value, result) => value === result,
+  },
+];
+let index = 0;
+let methodIndex = 0;
+let playing = true;
+let timer = null;
+
+function poolAt(r, c) {
+  const values = [input[r][c], input[r][c + 1], input[r + 1][c], input[r + 1][c + 1]];
+  const result = methods[methodIndex].fn(values);
+  return { values, result };
+}
+
+function makeCell(value, className = "") {
+  const node = document.createElement("div");
+  node.className = `cell ${className}`.trim();
+  node.textContent = value;
+  return node;
+}
+
+function formatValue(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function renderMethodOptions() {
+  const root = document.getElementById("methodOptions");
+  root.innerHTML = "";
+  methods.forEach((method, i) => {
+    const button = document.createElement("button");
+    button.className = `method-option${i === methodIndex ? " active" : ""}`;
+    button.textContent = method.key;
+    button.addEventListener("click", () => {
+      methodIndex = i;
+      render();
+      schedule();
+    });
+    root.appendChild(button);
+  });
+}
+
+function render() {
+  const [r, c] = positions[index];
+  const active = new Set([`${r}-${c}`, `${r}-${c + 1}`, `${r + 1}-${c}`, `${r + 1}-${c + 1}`]);
+  const method = methods[methodIndex];
+  const { values, result } = poolAt(r, c);
+  const output = positions.map(([rr, cc]) => poolAt(rr, cc).result);
+
+  const inputRoot = document.getElementById("inputGrid");
+  inputRoot.innerHTML = "";
+  input.forEach((row, rr) => {
+    row.forEach((value, cc) => {
+      const inWindow = active.has(`${rr}-${cc}`);
+      const isSelected = inWindow && method.highlight(value, result);
+      inputRoot.appendChild(makeCell(value, isSelected ? "max" : inWindow ? "window" : ""));
+    });
+  });
+
+  const outputRoot = document.getElementById("outputGrid");
+  outputRoot.innerHTML = "";
+  output.forEach((value, i) => outputRoot.appendChild(makeCell(formatValue(value), i === index ? "active-out" : "")));
+
+  renderMethodOptions();
+  document.getElementById("methodTitle").textContent = method.title;
+  document.getElementById("methodSymbol").textContent = method.symbol;
+  document.getElementById("methodNote").textContent = method.note;
+  document.getElementById("position").textContent = `row ${r}, col ${c}`;
+  document.getElementById("seek").value = String(index);
+  document.getElementById("formula").textContent =
+    `P[${r / 2}, ${c / 2}] = ${method.formulaName}(A[${r}:${r + 2}, ${c}:${c + 2}]) = ${method.formulaName}(${values.join(", ")}) = ${formatValue(result)}`;
+}
+
+function goNext() {
+  index = (index + 1) % positions.length;
+  render();
+}
+
+function goPrev() {
+  index = (index - 1 + positions.length) % positions.length;
+  render();
+}
+
+function schedule() {
+  clearInterval(timer);
+  if (playing) timer = setInterval(goNext, 1300);
+}
+
+document.getElementById("play").addEventListener("click", () => {
+  playing = !playing;
+  document.getElementById("play").textContent = playing ? "一時停止" : "再生";
+  schedule();
+});
+document.getElementById("prev").addEventListener("click", () => { goPrev(); schedule(); });
+document.getElementById("next").addEventListener("click", () => { goNext(); schedule(); });
+document.getElementById("seek").addEventListener("input", event => {
+  index = Number(event.target.value);
+  render();
+  schedule();
+});
+
+render();
+schedule();
+  </script>
+</body>
+</html>

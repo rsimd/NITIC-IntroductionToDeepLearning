@@ -335,8 +335,35 @@ body:has(.nitic-demo-embed-target) .nitic-demo-iframe {
     padding-bottom: 0 !important;
   }
 
+  article.article div:has(> iframe[title="CNN 畳み込みアニメーション"]) {
+    height: 1040px !important;
+    padding-bottom: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  article.article div:has(> iframe[title="CNN プーリングアニメーション"]) {
+    height: 980px !important;
+    padding-bottom: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  article.article div:has(> iframe[title="CNN 畳み込みアニメーション"]) > iframe,
+  article.article div:has(> iframe[title="CNN プーリングアニメーション"]) > iframe {
+    border: 1px solid #d7dde5 !important;
+    border-radius: 8px !important;
+  }
+
   article.article div:has(> iframe[title]) > iframe {
     height: 100% !important;
+  }
+
+  @media (max-width: 900px) {
+    article.article div:has(> iframe[title="CNN 畳み込みアニメーション"]),
+    article.article div:has(> iframe[title="CNN プーリングアニメーション"]) {
+      height: 1380px !important;
+    }
   }
 
   html.nitic-embed-page body,

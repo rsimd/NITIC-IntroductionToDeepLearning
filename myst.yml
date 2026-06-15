@@ -12,7 +12,10 @@ project:
     - file: book/index.md
     - file: book/01_overview.md
     - file: book/02_mlp.ipynb
+    - file: book/cnn_intro.md
     - file: book/03_cnn.ipynb
+    - file: book/04_cnn_hiragana.ipynb
+    - file: book/05_cnn_dog_cat.ipynb
     - file: "book/Object Detection.ipynb"
     - file: book/transformer.ipynb
     - file: book/llm.ipynb

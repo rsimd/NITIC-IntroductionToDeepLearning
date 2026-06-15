@@ -55,9 +55,11 @@ jobs:
           if [ "$build_status" -ne 0 ] && [ "$build_status" -ne 124 ]; then
             exit "$build_status"
           fi
+          uv run python scripts/postprocess_html.py _build/html
           test -f _build/html/index.html
           test -f _build/html/mlp/index.html
           test -f _build/html/cnn/index.html
+          test -f _build/html/nitic-python-highlight.js
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

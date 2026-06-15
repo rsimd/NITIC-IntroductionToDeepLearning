@@ -22,6 +22,7 @@ uv run jupyter-book start
 ```bash
 uv sync --frozen --all-groups
 BASE_URL=/NITIC-IntroductionToDeepLearning uv run jupyter-book build --html --ci
+uv run python scripts/postprocess_html.py _build/html
 ```
 
 生成物は `_build/html/` に出力されます。

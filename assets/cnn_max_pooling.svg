@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="520" viewBox="0 0 1080 520" role="img" aria-labelledby="title desc">
+  <title id="title">Max pooling の計算例</title>
+  <desc id="desc">2 x 2 の領域ごとに最大値を選び，4 x 4 の特徴マップを 2 x 2 に小さくする。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#334155"/>
+    </marker>
+    <style>
+      .label { font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", sans-serif; fill: #172033; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 19px; fill: #475569; }
+      .celltext { font-size: 27px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+      .caption { font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect width="1080" height="520" fill="#ffffff"/>
+  <text x="540" y="48" class="label title" text-anchor="middle">プーリング層: 近い情報をまとめる</text>
+  <text x="540" y="82" class="label subtitle" text-anchor="middle">Max pooling は，小さな領域の中でいちばん強い反応だけを残す。学習する重みは持たない。</text>
+
+  <g transform="translate(110 150)">
+    <text x="140" y="-24" class="label caption">畳み込み後の特徴マップ</text>
+    <rect x="0" y="0" width="280" height="280" fill="#f8fafc" stroke="#334155" stroke-width="3"/>
+    <rect x="0" y="0" width="140" height="140" fill="#dbeafe" opacity="0.72"/>
+    <rect x="140" y="0" width="140" height="140" fill="#ffedd5" opacity="0.82"/>
+    <rect x="0" y="140" width="140" height="140" fill="#dcfce7" opacity="0.78"/>
+    <rect x="140" y="140" width="140" height="140" fill="#fce7f3" opacity="0.72"/>
+    <g stroke="#94a3b8" stroke-width="2">
+      <path d="M 70 0 V 280 M 140 0 V 280 M 210 0 V 280 M 0 70 H 280 M 0 140 H 280 M 0 210 H 280"/>
+    </g>
+    <g stroke="#172033" stroke-width="5" fill="none">
+      <rect x="0" y="0" width="140" height="140"/>
+      <rect x="140" y="0" width="140" height="140"/>
+      <rect x="0" y="140" width="140" height="140"/>
+      <rect x="140" y="140" width="140" height="140"/>
+    </g>
+    <g class="label celltext">
+      <text x="35" y="35">1</text><text x="105" y="35">2</text><text x="175" y="35">1</text><text x="245" y="35">0</text>
+      <text x="35" y="105">0</text><text x="105" y="105">1</text><text x="175" y="105">2</text><text x="245" y="105">3</text>
+      <text x="35" y="175">3</text><text x="105" y="175">0</text><text x="175" y="175">1</text><text x="245" y="175">2</text>
+      <text x="35" y="245">2</text><text x="105" y="245">4</text><text x="175" y="245">0</text><text x="245" y="245">1</text>
+    </g>
+  </g>
+
+  <line x1="455" y1="290" x2="555" y2="290" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="505" y="260" class="label note" text-anchor="middle">2 x 2 ごとに最大値</text>
+
+  <g transform="translate(625 185)">
+    <text x="105" y="-24" class="label caption">小さくなった特徴マップ</text>
+    <rect x="0" y="0" width="210" height="210" fill="#ecfdf5" stroke="#16a34a" stroke-width="3"/>
+    <rect x="0" y="0" width="105" height="105" fill="#dbeafe" opacity="0.72"/>
+    <rect x="105" y="0" width="105" height="105" fill="#ffedd5" opacity="0.82"/>
+    <rect x="0" y="105" width="105" height="105" fill="#dcfce7" opacity="0.78"/>
+    <rect x="105" y="105" width="105" height="105" fill="#fce7f3" opacity="0.72"/>
+    <g stroke="#86efac" stroke-width="2">
+      <path d="M 105 0 V 210 M 0 105 H 210"/>
+    </g>
+    <g class="label celltext">
+      <text x="52.5" y="52.5">2</text><text x="157.5" y="52.5">3</text>
+      <text x="52.5" y="157.5">4</text><text x="157.5" y="157.5">2</text>
+    </g>
+  </g>
+
+  <g transform="translate(865 180)">
+    <rect x="0" y="0" width="150" height="220" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="75" y="35" class="label" font-size="18" font-weight="700" text-anchor="middle">何が嬉しい?</text>
+    <text x="18" y="75" class="label note">サイズが</text>
+    <text x="18" y="100" class="label note">小さくなる</text>
+    <text x="18" y="140" class="label note">少しの位置ずれに</text>
+    <text x="18" y="165" class="label note">強くなる</text>
+    <text x="18" y="205" class="label note">重みは学習しない</text>
+  </g>
+</svg>

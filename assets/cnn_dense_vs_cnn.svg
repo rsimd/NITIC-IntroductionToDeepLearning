@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Dense と CNN の画像の扱い方の違い</title>
+  <desc id="desc">Dense 層は画像を一列に並べて処理するのに対し，CNN は近くの画素の並びを保ったまま小さな領域を順に見て特徴を取り出す。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#334155"/>
+    </marker>
+    <style>
+      .label { font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", sans-serif; fill: #172033; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 20px; fill: #475569; }
+      .small { font-size: 17px; fill: #334155; }
+      .tiny { font-size: 15px; fill: #475569; }
+      .box { stroke-width: 2; rx: 10; }
+      .pixel { stroke: #94a3b8; stroke-width: 1.2; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="520" fill="#ffffff"/>
+  <text x="600" y="50" class="label title" text-anchor="middle">画像をどう見るかで，学習しやすさが変わる</text>
+  <text x="600" y="82" class="label subtitle" text-anchor="middle">Dense は全部を一列に並べる。CNN は近くの画素の関係を保ったまま見る。</text>
+
+  <g transform="translate(50 125)">
+    <rect width="510" height="330" rx="16" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="255" y="38" class="label subtitle" text-anchor="middle" font-weight="700">Dense 層だけで画像を見る</text>
+    <text x="255" y="68" class="label tiny" text-anchor="middle">28 x 28 の位置関係を，784 個の数の列に変える</text>
+
+    <g transform="translate(55 110)">
+      <text x="72" y="-18" class="label small" text-anchor="middle">画像</text>
+      <g>
+        <rect x="0" y="0" width="144" height="144" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <path d="M 24 24 H 120 M 24 48 H 120 M 24 72 H 120 M 24 96 H 120 M 24 120 H 120 M 24 0 V 144 M 48 0 V 144 M 72 0 V 144 M 96 0 V 144 M 120 0 V 144" stroke="#93c5fd" stroke-width="1.4"/>
+        <path d="M 43 30 H 102 M 43 30 L 36 68 H 88 C 116 68 116 114 75 120 C 56 122 42 115 34 105" stroke="#111827" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </g>
+    </g>
+
+    <line x1="220" y1="182" x2="286" y2="182" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="253" y="165" class="label tiny" text-anchor="middle">flatten</text>
+
+    <g transform="translate(318 102)">
+      <text x="46" y="-10" class="label small" text-anchor="middle">784 個の列</text>
+      <g fill="#dbeafe" stroke="#2563eb" stroke-width="1.6">
+        <rect x="22" y="8" width="48" height="18"/>
+        <rect x="22" y="31" width="48" height="18"/>
+        <rect x="22" y="54" width="48" height="18"/>
+        <rect x="22" y="77" width="48" height="18"/>
+        <rect x="22" y="100" width="48" height="18"/>
+        <rect x="22" y="123" width="48" height="18"/>
+      </g>
+      <text x="46" y="168" class="label tiny" text-anchor="middle">近くにあった画素が</text>
+      <text x="46" y="191" class="label tiny" text-anchor="middle">列の中で離れる</text>
+    </g>
+
+    <text x="255" y="290" class="label small" text-anchor="middle">位置の近さや線の向きは，自動では扱いにくい。</text>
+  </g>
+
+  <g transform="translate(640 125)">
+    <rect width="510" height="330" rx="16" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="255" y="38" class="label subtitle" text-anchor="middle" font-weight="700">CNN で画像を見る</text>
+    <text x="255" y="68" class="label tiny" text-anchor="middle">小さな窓を動かし，近くの画素の並びから特徴を取り出す</text>
+
+    <g transform="translate(48 110)">
+      <text x="72" y="-18" class="label small" text-anchor="middle">画像</text>
+      <rect x="0" y="0" width="144" height="144" fill="#ecfdf5" stroke="#16a34a" stroke-width="2"/>
+      <path d="M 24 0 V 144 M 48 0 V 144 M 72 0 V 144 M 96 0 V 144 M 120 0 V 144 M 0 24 H 144 M 0 48 H 144 M 0 72 H 144 M 0 96 H 144 M 0 120 H 144" stroke="#86efac" stroke-width="1.4"/>
+      <path d="M 43 30 H 102 M 43 30 L 36 68 H 88 C 116 68 116 114 75 120 C 56 122 42 115 34 105" stroke="#111827" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <rect x="24" y="24" width="72" height="72" fill="#fde68a" stroke="#d97706" stroke-width="4" opacity="0.82"/>
+    </g>
+
+    <line x1="214" y1="182" x2="280" y2="182" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="247" y="165" class="label tiny" text-anchor="middle">filter</text>
+
+    <g transform="translate(310 113)">
+      <text x="78" y="-20" class="label small" text-anchor="middle">特徴マップ</text>
+      <rect x="0" y="0" width="116" height="116" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+      <path d="M 14 14 H 102 M 14 38 H 102 M 14 62 H 102 M 14 86 H 102 M 14 0 V 116 M 38 0 V 116 M 62 0 V 116 M 86 0 V 116 M 102 0 V 116" stroke="#fdba74" stroke-width="1.3"/>
+      <path d="M 25 33 C 54 50 78 50 96 35 M 24 83 C 50 64 78 62 96 78" stroke="#7c2d12" stroke-width="5" fill="none" opacity="0.7"/>
+      <rect x="34" y="28" width="116" height="116" fill="#e0f2fe" stroke="#0284c7" stroke-width="2" opacity="0.9"/>
+      <path d="M 48 56 H 136 M 48 80 H 136 M 48 104 H 136 M 48 128 H 136 M 48 42 V 144 M 72 42 V 144 M 96 42 V 144 M 120 42 V 144 M 136 42 V 144" stroke="#7dd3fc" stroke-width="1.3"/>
+      <path d="M 58 68 L 132 119 M 61 116 L 132 65" stroke="#075985" stroke-width="5" opacity="0.68"/>
+    </g>
+
+    <text x="255" y="290" class="label small" text-anchor="middle">同じフィルタを全体に動かすので，場所が少し変わっても同じ特徴を見つけやすい。</text>
+  </g>
+</svg>
